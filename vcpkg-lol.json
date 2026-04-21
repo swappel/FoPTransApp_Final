@@ -1,0 +1,12 @@
+{
+  "name" : "foptransapp-final",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "e778080f0d8019247d332ef3a3df1202578ca202",
+  "dependencies" : [
+    "cpputest",
+    "ftxui",
+    "nlohmann-json",
+    "vcpkg-cmake-config",
+    "vcpkg-cmake"
+  ]
+}
