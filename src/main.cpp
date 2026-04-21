@@ -2,4 +2,6 @@
 
 int main() {
 
+    // TODO: Implement general loop for app
+
 }
