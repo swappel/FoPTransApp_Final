@@ -17,8 +17,10 @@ class LocaleLine
 public:
     LocaleLine();
     LocaleLine(const std::string& hash, const std::string& content, int character, int unknown);
-    LocaleLine(const std::string& hash, const std::string& convertedHash, const std::string& content, int character,
-               int unknown);
+    LocaleLine(const std::string& hash, const std::string& convertedHash, const std::string& content, const std::string &convertedContent,
+        int character,
+        int unknown
+    );
     [[nodiscard]] std::string getHash() const;
     [[nodiscard]] std::string getConvertedHash() const;
     [[nodiscard]] std::string getContent() const;
