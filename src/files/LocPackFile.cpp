@@ -39,13 +39,30 @@ void LocPackFile::setPath(const filesystem::path& path)
 }
 
 /**
+ * @brief Helper to remove '\r' from strings.
+ *
+ * This function is a helper to remove the '\r' exit code from strings.
+ *
+ * @attention Modifies the content in-place!
+ *
+ * @param content The content to modify.
+ */
+void convertReadContent(string& content)
+{
+    content.erase(
+        ranges::remove(content, '\r').begin(),
+        content.end()
+    );
+}
+
+/**
  * @brief Loads the file saved in the locPackFilePath variable
  *
  * This function loads the file saved in the locPackFilePath variable
  * and returns a boolean true if that succeeded, false if not.
  * The file needs to exist and to have a .locpack extension on order to be valid.
  *
- * @return Returns `true` if all conditions are met, `false` otherwise.
+ * @return Returns a boolean with value `true` if all conditions are met, `false` otherwise.
  */
 bool LocPackFile::load()
 {
@@ -75,7 +92,7 @@ bool LocPackFile::load()
  * This function only reloads the file if said file has been edited.
  * This is checked by looking at the last write timestamp.
  * 
- * @return Returns `true` if function ran without an error, `false` otherwise. 
+ * @return Returns a boolean with value `true` if function ran without an error, `false` otherwise.
  */
 bool LocPackFile::reload()
 {
@@ -123,10 +140,7 @@ vector<LocaleLine> LocPackFile::parseLocPackComplete()
         if (readStrings.size() < 4) continue;
 
         // Remove the \r from the string.
-        readStrings[3].erase(
-            ranges::remove(readStrings[3], '\r').begin(),
-            readStrings[3].end()
-        );
+        convertReadContent(readStrings[3]);
 
         lines.emplace_back(
             readStrings[0],
@@ -137,4 +151,60 @@ vector<LocaleLine> LocPackFile::parseLocPackComplete()
     }
 
     return lines;
+}
+
+/**
+ * @brief Finds the Index of an index in a .locpack file.
+ *
+ * Finds the index of a lien based off of its hash.
+ *
+ * @throws This function throws a runtime error if the reloading of the file fails. See `LocPackFile::load()` and `LocPackFile::reload()` for more information about loading
+ *
+ * @param hash The hash in .lockpack version(Big Endian) as a string. No '0x' prefix
+ * @return The 0-based index of a line as an int. -1 if line is not found.
+ */
+int LocPackFile::findHashIndex(const std::string& hash)
+{
+    if (!reload()) throw runtime_error("Reloading file path at '" + locPackFilePath.string() + "' failed.");
+
+    string formattedHash = hash;
+
+    // Make sure the hash has uppercase letters
+    std::transform(formattedHash.begin(), formattedHash.end(), formattedHash.begin(),
+                   [](unsigned char c) { return std::toupper(c); });
+
+    for (int i = 0; i < document->GetRowCount(); ++i)
+    {
+        if (const vector<string> line = document->GetRow<string>(i); line[0] == formattedHash)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/**
+ * @brief Finds a line by its hash in a .locpack file.
+ *
+ * @throws This function uses the `LocPackFile::findHashIndex()` function and therefor throws an exception if the reload of a file fails. <br>See `LocPackFile::load()` and `LocPackFile::reload()`.
+ *
+ * @param hash The hash in .lockpack version(Big Endian) as a string. No '0x' prefix.
+ * @return A `LocaleLine` object with the information of the read line.
+ */
+LocaleLine LocPackFile::findFromHash(const std::string& hash)
+{
+    const int foundIndex = findHashIndex(hash);
+
+    if (foundIndex == -1)
+    {
+        printf("Hash %s not found. Try again\n", hash.c_str());
+    }
+
+    vector<string> readLine = document->GetRow<string>(foundIndex);
+
+    // Remove the \r from the string.
+    convertReadContent(readLine[3]);
+
+    return LocaleLine{readLine[0], readLine[3], stoi(readLine[1]), stoi(readLine[2])};
 }
