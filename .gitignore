@@ -1,4 +1,4 @@
 .idea
 .vscode
 cmake-build-*
-vcpkg/
+/vcpkg/
