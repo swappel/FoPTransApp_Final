@@ -21,13 +21,18 @@ public:
     void setPath(const std::filesystem::path& path);
     [[nodiscard]] std::filesystem::path getPath() const;
 
-    [[nodiscard]] std::vector<LocaleLine> parseLocPackRange(int offset, int amount) const;
-    [[nodiscard]] std::vector<LocaleLine> parseLocPackComplete() const;
-    [[nodiscard]] int findHashIndex(const std::string &hash) const;
+    bool load();
+    bool reload();
 
-    [[nodiscard]] LocaleLine findFromHash(const std::string &hash) const;
+    // TODO: Decide if necessary, since not remote project anymore
+    //[[nodiscard]] std::vector<LocaleLine> parseLocPackRange(int offset, int amount);
 
-    void writeEntry(const std::string &hash, int character, int unknown, const std::string &content);
+    [[nodiscard]] std::vector<LocaleLine> parseLocPackComplete();
+    [[nodiscard]] int findHashIndex(const std::string& hash) const;
+
+    [[nodiscard]] LocaleLine findFromHash(const std::string& hash) const;
+
+    void writeEntry(const std::string& hash, int character, int unknown, const std::string& content, bool overwrite);
 };
 
 #endif //FOPTRANSAPP_FINAL_LOCPACKFILE_H
