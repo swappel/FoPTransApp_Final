@@ -4,8 +4,9 @@ project(FoPTransApp_Final)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(nlohmann_json REQUIRED)
-find_package(CppUTest REQUIRED)
+find_package(CppUTest CONFIG REQUIRED)
 find_package(FTXUI REQUIRED)
+find_package(rapidcsv CONFIG REQUIRED)
 
 add_executable(FoPTransApp_Final src/main.cpp
         src/utils/GitHubManager.cpp
@@ -14,7 +15,9 @@ add_executable(FoPTransApp_Final src/main.cpp
         src/files/LocPackBinFile.cpp
         include/files/LocPackBinFile.h
         src/utils/DataSerializer.cpp
-        include/utils/DataSerializer.h)
+        include/utils/DataSerializer.h
+        src/utils/LocaleLine.cpp
+        include/utils/LocaleLine.h)
 
 target_include_directories(FoPTransApp_Final PUBLIC include)
 target_link_libraries(FoPTransApp_Final PRIVATE
@@ -23,4 +26,5 @@ target_link_libraries(FoPTransApp_Final PRIVATE
         ftxui::screen
         ftxui::dom
         ftxui::component
+        rapidcsv::rapidcsv
 )
