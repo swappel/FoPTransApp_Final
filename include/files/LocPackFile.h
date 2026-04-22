@@ -14,6 +14,9 @@ private:
     std::unique_ptr<rapidcsv::Document> document;
     std::filesystem::file_time_type lastLoadTime;
 
+    std::unordered_map<std::string, int> hashCache;
+
+    void rebuildCache();
 public:
     LocPackFile();
     explicit LocPackFile(const std::filesystem::path& path);

@@ -55,6 +55,24 @@ void convertReadContent(string& content)
     );
 }
 
+void LocPackFile::rebuildCache()
+{
+    hashCache.clear();
+    if (!document) return;
+
+    const size_t rowCount = document->GetRowCount();
+    hashCache.reserve(rowCount);
+
+    for (int i = 0; i < rowCount; i++)
+    {
+        string hash = document->GetCell<string>(0, i);
+
+        ranges::transform(hash, hash.begin(), ::toupper);
+
+        hashCache[hash] = i;
+    }
+}
+
 /**
  * @brief Loads the file saved in the locPackFilePath variable
  *
@@ -80,6 +98,7 @@ bool LocPackFile::load()
 
     // Save the document to the class
     document = std::move(doc);
+    rebuildCache();
 
     // Set the last load time to the time the file was last edited
     lastLoadTime = filesystem::last_write_time(locPackFilePath);
@@ -167,18 +186,13 @@ int LocPackFile::findHashIndex(const std::string& hash)
 {
     if (!reload()) throw runtime_error("Reloading file path at '" + locPackFilePath.string() + "' failed.");
 
-    string formattedHash = hash;
-
     // Make sure the hash has uppercase letters
-    std::transform(formattedHash.begin(), formattedHash.end(), formattedHash.begin(),
-                   [](unsigned char c) { return std::toupper(c); });
+    string formattedHash = hash;
+    ranges::transform(formattedHash, formattedHash.begin(), ::toupper);
 
-    for (int i = 0; i < document->GetRowCount(); ++i)
+    if (auto it = hashCache.find(formattedHash); it != hashCache.end())
     {
-        if (const vector<string> line = document->GetRow<string>(i); line[0] == formattedHash)
-        {
-            return i;
-        }
+        return it->second;
     }
 
     return -1;
@@ -195,10 +209,11 @@ int LocPackFile::findHashIndex(const std::string& hash)
 LocaleLine LocPackFile::findFromHash(const std::string& hash)
 {
     const int foundIndex = findHashIndex(hash);
-
     if (foundIndex == -1)
     {
         printf("Hash %s not found. Try again\n", hash.c_str());
+
+        // TODO: Call the prompt function again here
     }
 
     vector<string> readLine = document->GetRow<string>(foundIndex);
@@ -207,4 +222,9 @@ LocaleLine LocPackFile::findFromHash(const std::string& hash)
     convertReadContent(readLine[3]);
 
     return LocaleLine{readLine[0], readLine[3], stoi(readLine[1]), stoi(readLine[2])};
+}
+
+void LocPackFile::writeEntry(const std::string& hash, int character, int unknown, const std::string& content, bool overwrite)
+{
+    // TODO: Fill out stub!!!
 }
