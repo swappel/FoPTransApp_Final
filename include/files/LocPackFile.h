@@ -28,9 +28,9 @@ public:
     //[[nodiscard]] std::vector<LocaleLine> parseLocPackRange(int offset, int amount);
 
     [[nodiscard]] std::vector<LocaleLine> parseLocPackComplete();
-    [[nodiscard]] int findHashIndex(const std::string& hash) const;
+    [[nodiscard]] int findHashIndex(const std::string& hash);
 
-    [[nodiscard]] LocaleLine findFromHash(const std::string& hash) const;
+    [[nodiscard]] LocaleLine findFromHash(const std::string& hash);
 
     void writeEntry(const std::string& hash, int character, int unknown, const std::string& content, bool overwrite);
 };
