@@ -65,7 +65,7 @@ void LocPackFile::rebuildCache()
 
     for (int i = 0; i < rowCount; i++)
     {
-        string hash = document->GetCell<string>(0, i);
+        auto hash = document->GetCell<string>(0, i);
 
         ranges::transform(hash, hash.begin(), ::toupper);
 
@@ -224,7 +224,8 @@ LocaleLine LocPackFile::findFromHash(const std::string& hash)
     return LocaleLine{readLine[0], readLine[3], stoi(readLine[1]), stoi(readLine[2])};
 }
 
-void LocPackFile::writeEntry(const std::string& hash, int character, int unknown, const std::string& content, bool overwrite)
+void LocPackFile::writeEntry(const std::string& hash, int character, int unknown, const std::string& content,
+                             bool overwrite)
 {
     // TODO: Fill out stub!!!
 }

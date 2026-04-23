@@ -17,6 +17,7 @@ private:
     std::unordered_map<std::string, int> hashCache;
 
     void rebuildCache();
+
 public:
     LocPackFile();
     explicit LocPackFile(const std::filesystem::path& path);

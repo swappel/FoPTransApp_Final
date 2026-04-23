@@ -1,6 +1,7 @@
 #include <iostream>
 
-int main() {
+int main()
+{
     // TODO: Implement general loop for app
     // TODO: Implement UI
     // TODO: Implement pre-save cache for changes
