@@ -3,10 +3,11 @@ project(FoPTransApp_Final)
 
 set(CMAKE_CXX_STANDARD 20)
 
-find_package(nlohmann_json REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 find_package(CppUTest CONFIG REQUIRED)
 find_package(FTXUI REQUIRED)
 find_package(rapidcsv CONFIG REQUIRED)
+find_package(fkYAML CONFIG REQUIRED)
 
 add_executable(FoPTransApp_Final src/main.cpp
         src/utils/GitHubManager.cpp
@@ -27,4 +28,5 @@ target_link_libraries(FoPTransApp_Final PRIVATE
         ftxui::dom
         ftxui::component
         rapidcsv::rapidcsv
+        fkYAML::fkYAML
 )
