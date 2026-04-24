@@ -1,5 +1,5 @@
-#ifndef FOPTRANSAPP_FINAL_LOCALELINE_H
-#define FOPTRANSAPP_FINAL_LOCALELINE_H
+#pragma once
+
 #include <string>
 #include <vector>
 
@@ -33,5 +33,3 @@ public:
     void setConvertedContent(const std::string& convertedContent);
     void setFields(const std::vector<int>& fields);
 };
-
-#endif //FOPTRANSAPP_FINAL_LOCALELINE_H

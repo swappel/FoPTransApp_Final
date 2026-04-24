@@ -1,5 +1,5 @@
-#ifndef FOPTRANSAPP_FINAL_LOCPACKBINFILE_H
-#define FOPTRANSAPP_FINAL_LOCPACKBINFILE_H
+#pragma once
+
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -62,5 +62,3 @@ public:
 
     static void flipEndianness(std::string& hex, size_t byteChunkSize = 8);
 };
-
-#endif //FOPTRANSAPP_FINAL_LOCPACKBINFILE_H

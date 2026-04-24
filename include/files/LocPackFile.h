@@ -1,5 +1,4 @@
-#ifndef FOPTRANSAPP_FINAL_LOCPACKFILE_H
-#define FOPTRANSAPP_FINAL_LOCPACKFILE_H
+#pragma once
 
 #include <filesystem>
 #include <string>
@@ -43,5 +42,3 @@ public:
 
     void writeEntry(const std::string& hash, int character, int unknown, const std::string& content, bool overwrite);
 };
-
-#endif //FOPTRANSAPP_FINAL_LOCPACKFILE_H
