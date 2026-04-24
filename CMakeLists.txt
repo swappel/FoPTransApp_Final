@@ -8,6 +8,7 @@ find_package(CppUTest CONFIG REQUIRED)
 find_package(FTXUI REQUIRED)
 find_package(rapidcsv CONFIG REQUIRED)
 find_package(fkYAML CONFIG REQUIRED)
+find_package(libgit2 CONFIG REQUIRED)
 
 add_executable(FoPTransApp_Final src/main.cpp
         src/utils/GitHubManager.cpp
@@ -29,4 +30,5 @@ target_link_libraries(FoPTransApp_Final PRIVATE
         ftxui::component
         rapidcsv::rapidcsv
         fkYAML::fkYAML
+        libgit2::libgit2package
 )
