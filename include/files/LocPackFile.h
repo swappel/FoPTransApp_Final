@@ -10,17 +10,19 @@
 class LocPackFile
 {
 private:
-    std::filesystem::path locPackFilePath;
-    std::unique_ptr<rapidcsv::Document> document;
-    std::filesystem::file_time_type lastLoadTime;
+    std::filesystem::path m_locPackFilePath;
+    std::unique_ptr<rapidcsv::Document> m_document;
+    std::filesystem::file_time_type m_lastLoadTime;
 
-    std::unordered_map<std::string, int> hashCache;
+    std::unordered_map<std::string, int> m_hashCache;
+
+    unsigned int m_fieldNumber;
 
     void rebuildCache();
 
 public:
     LocPackFile();
-    explicit LocPackFile(const std::filesystem::path& path);
+    explicit LocPackFile(std::filesystem::path path);
 
     void setPath(const std::filesystem::path& path);
     [[nodiscard]] std::filesystem::path getPath() const;

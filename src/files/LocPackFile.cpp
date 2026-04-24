@@ -4,6 +4,9 @@
  */
 #include "files/LocPackFile.h"
 
+#include <utility>
+#define HEADER_ROW_COUNT 2
+
 using namespace std;
 
 // Use the already defined classes and methods in the old backend project.
@@ -22,20 +25,19 @@ LocPackFile::LocPackFile() = default;
  *
  * @param path A path to a .locpack file.
  */
-LocPackFile::LocPackFile(const std::filesystem::path& path)
+LocPackFile::LocPackFile(std::filesystem::path path) : m_locPackFilePath(std::move(path))
 {
-    locPackFilePath = path;
 }
 
 // Getters and setters
 filesystem::path LocPackFile::getPath() const
 {
-    return locPackFilePath;
+    return m_locPackFilePath;
 }
 
 void LocPackFile::setPath(const filesystem::path& path)
 {
-    locPackFilePath = path;
+    m_locPackFilePath = path;
 }
 
 /**
@@ -57,26 +59,26 @@ void convertReadContent(string& content)
 
 void LocPackFile::rebuildCache()
 {
-    hashCache.clear();
-    if (!document) return;
+    m_hashCache.clear();
+    if (!m_document) return;
 
-    const size_t rowCount = document->GetRowCount();
-    hashCache.reserve(rowCount);
+    const size_t rowCount = m_document->GetRowCount();
+    m_hashCache.reserve(rowCount);
 
-    for (int i = 0; i < rowCount; i++)
+    for (int i = HEADER_ROW_COUNT; i < rowCount; i++)
     {
-        auto hash = document->GetCell<string>(0, i);
+        auto hash = m_document->GetCell<string>(0, i);
 
         ranges::transform(hash, hash.begin(), ::toupper);
 
-        hashCache[hash] = i;
+        m_hashCache[hash] = i;
     }
 }
 
 /**
- * @brief Loads the file saved in the locPackFilePath variable
+ * @brief Loads the file saved in the m_locPackFilePath variable
  *
- * This function loads the file saved in the locPackFilePath variable
+ * This function loads the file saved in the m_locPackFilePath variable
  * and returns a boolean true if that succeeded, false if not.
  * The file needs to exist and to have a .locpack extension on order to be valid.
  *
@@ -85,23 +87,26 @@ void LocPackFile::rebuildCache()
 bool LocPackFile::load()
 {
     // Test conditions to indicate whether the path exists or not.
-    if (!filesystem::exists(locPackFilePath)) return false;
-    if (filesystem::is_directory(locPackFilePath)) return false;
-    if (locPackFilePath.extension() != ".locpack") return false;
+    if (!filesystem::exists(m_locPackFilePath)) return false;
+    if (filesystem::is_directory(m_locPackFilePath)) return false;
+    if (m_locPackFilePath.extension() != ".locpack") return false;
 
     // Create the CSV Parser
     auto doc = make_unique<rapidcsv::Document>(
-        locPackFilePath.string(),
+        m_locPackFilePath.string(),
         rapidcsv::LabelParams(-1, -1),
         rapidcsv::SeparatorParams(',', false, true, true, false)
     );
 
-    // Save the document to the class
-    document = std::move(doc);
+    // Get the number of total fields
+    m_fieldNumber = doc->GetColumnCount();
+
+    // Save the m_document to the class
+    m_document = std::move(doc);
     rebuildCache();
 
     // Set the last load time to the time the file was last edited
-    lastLoadTime = filesystem::last_write_time(locPackFilePath);
+    m_lastLoadTime = filesystem::last_write_time(m_locPackFilePath);
     return true;
 }
 
@@ -115,13 +120,13 @@ bool LocPackFile::load()
  */
 bool LocPackFile::reload()
 {
-    if (!filesystem::exists(locPackFilePath)) return false;
+    if (!filesystem::exists(m_locPackFilePath)) return false;
 
     // Create the currentModTime(currently last modification time of the file) and compare it with the last time the file was loaded in this program.
-    if (const auto currentModTime = filesystem::last_write_time(locPackFilePath);
-        currentModTime > lastLoadTime)
+    if (const auto currentModTime = filesystem::last_write_time(m_locPackFilePath);
+        currentModTime > m_lastLoadTime)
     {
-        printf("Realoding the file...");
+        printf("Reloading the file...");
 
         return load();
     }
@@ -132,41 +137,44 @@ bool LocPackFile::reload()
 /**
  * @brief Takes the file and loads every line into the program
  *
- * This function uses the `document` variable, tries to reload it,
+ * This function uses the `m_document` variable, tries to reload it,
  * and loads the whole content into a `std::vector` object of `LocaleLine`
  *
  * It reserves the memory needed for all the lines.
  *
  * @throws This throws a runtime error if the reloading of the file fails. See `LocPackFile::load()` and `LocPackFile::reload()` for more information about loading
  *
- * @return Returns the vector with all the lines from the document in it.
+ * @return Returns the vector with all the lines from the m_document in it.
  */
 vector<LocaleLine> LocPackFile::parseLocPackComplete()
 {
-    if (!reload()) throw runtime_error("Reloading file path at '" + locPackFilePath.string() + "' failed.");
+    if (!reload()) throw runtime_error("Reloading file path at '" + m_locPackFilePath.string() + "' failed.");
 
     // Create and reserve vector space.
     vector<LocaleLine> lines;
-    const size_t lineCount = document->GetRowCount();
+    const size_t lineCount = m_document->GetRowCount();
     lines.reserve(lineCount);
 
     // Read all the lines
-    for (int i = 0; i < lineCount; i++)
+    for (int i = HEADER_ROW_COUNT; i < lineCount; i++)
     {
         // Get the string at i
-        vector<string> readStrings = document->GetRow<string>(i);
+        vector<string> readStrings = m_document->GetRow<string>(i);
 
         if (readStrings.size() < 4) continue;
 
         // Remove the \r from the string.
         convertReadContent(readStrings[3]);
 
-        lines.emplace_back(
-            readStrings[0],
-            readStrings[3],
-            stoi(readStrings[1]),
-            stoi(readStrings[2])
-        );
+        vector<int> fields;
+        fields.reserve(m_fieldNumber - 2);
+
+        for (int j = 1; j < m_fieldNumber - 1; j++)
+        {
+            fields.emplace_back(stoi(readStrings[j]));
+        }
+
+        lines.emplace_back(readStrings[0], readStrings[m_fieldNumber - 1], fields);
     }
 
     return lines;
@@ -184,13 +192,13 @@ vector<LocaleLine> LocPackFile::parseLocPackComplete()
  */
 int LocPackFile::findHashIndex(const std::string& hash)
 {
-    if (!reload()) throw runtime_error("Reloading file path at '" + locPackFilePath.string() + "' failed.");
+    if (!reload()) throw runtime_error("Reloading file path at '" + m_locPackFilePath.string() + "' failed.");
 
     // Make sure the hash has uppercase letters
     string formattedHash = hash;
     ranges::transform(formattedHash, formattedHash.begin(), ::toupper);
 
-    if (auto it = hashCache.find(formattedHash); it != hashCache.end())
+    if (const auto it = m_hashCache.find(formattedHash); it != m_hashCache.end())
     {
         return it->second;
     }
@@ -214,14 +222,35 @@ LocaleLine LocPackFile::findFromHash(const std::string& hash)
         printf("Hash %s not found. Try again\n", hash.c_str());
 
         // TODO: Call the prompt function again here
+        return LocaleLine{};
     }
 
-    vector<string> readLine = document->GetRow<string>(foundIndex);
+    const vector<string> readLine = m_document->GetRow<string>(foundIndex);
 
-    // Remove the \r from the string.
-    convertReadContent(readLine[3]);
+    if (readLine.size() < static_cast<size_t>(m_fieldNumber))
+    {
+        return LocaleLine{};
+    }
 
-    return LocaleLine{readLine[0], readLine[3], stoi(readLine[1]), stoi(readLine[2])};
+    string content = readLine[m_fieldNumber - 1];
+    convertReadContent(content);
+
+    vector<int> fields;
+    fields.reserve(m_fieldNumber - 2);
+
+    for (int j = 1; j < m_fieldNumber - 1; j++)
+    {
+        try
+        {
+            fields.emplace_back(stoi(readLine[j]));
+        }
+        catch (...)
+        {
+            fields.emplace_back(0);
+        }
+    }
+
+    return LocaleLine{readLine[0], content, fields};
 }
 
 void LocPackFile::writeEntry(const std::string& hash, int character, int unknown, const std::string& content,
