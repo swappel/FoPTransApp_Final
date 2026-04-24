@@ -44,11 +44,10 @@ void LocPackFile::setPath(const filesystem::path& path)
  *
  * This function is a helper to remove the '\r' exit code from strings.
  *
- * @attention Modifies the content in-place!
- *
  * @param content The content to modify.
+ * @attention Modifies the content in-place!
  */
-void convertReadContent(string& content)
+void LocPackFile::convertReadContent(std::string& content)
 {
     content.erase(
         ranges::remove(content, '\r').begin(),
@@ -149,7 +148,7 @@ bool LocPackFile::reload()
  *
  * It reserves the memory needed for all the lines.
  *
- * @throws This throws a runtime error if the reloading of the file fails. See `LocPackFile::load()` and `LocPackFile::reload()` for more information about loading
+ * @throws runtime_error This throws a runtime error if the reloading of the file fails. See `LocPackFile::load()` and `LocPackFile::reload()` for more information about loading
  *
  * @return Returns the vector with all the lines from the m_document in it.
  */
@@ -190,9 +189,9 @@ vector<LocaleLine> LocPackFile::parseLocPackComplete()
 /**
  * @brief Finds the Index of an index in a .locpack file.
  *
- * Finds the index of a lien based off of its hash.
+ * Finds the index of a line based off of its hash.
  *
- * @throws This function throws a runtime error if the reloading of the file fails. See `LocPackFile::load()` and `LocPackFile::reload()` for more information about loading
+ * @throws runtime_error This function throws a runtime error if the reloading of the file fails. See `LocPackFile::load()` and `LocPackFile::reload()` for more information about loading
  *
  * @param hash The hash in .lockpack version(Big Endian) as a string. No '0x' prefix
  * @return The 0-based index of a line as an int. -1 if line is not found.
@@ -216,7 +215,8 @@ int LocPackFile::findHashIndex(const std::string& hash)
 /**
  * @brief Finds a line by its hash in a .locpack file.
  *
- * @throws This function uses the `LocPackFile::findHashIndex()` function and therefor throws an exception if the reload of a file fails. <br>See `LocPackFile::load()` and `LocPackFile::reload()`.
+ * @throws runtime_error This function uses the `LocPackFile::findHashIndex()` function and therefore throws an exception if the reload of a file fails. <br>
+ * See `LocPackFile::load()` and `LocPackFile::reload()` for more information.
  *
  * @param hash The hash in .lockpack version(Big Endian) as a string. No '0x' prefix.
  * @return A `LocaleLine` object with the information of the read line.

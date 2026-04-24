@@ -19,6 +19,7 @@ private:
     unsigned int m_fieldNumber;
 
     void rebuildCache();
+    static void convertReadContent(std::string& content);
 
 public:
     LocPackFile();
