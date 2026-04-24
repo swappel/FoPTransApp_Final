@@ -188,7 +188,7 @@ vector<LocaleLine> LocPackFile::parseLocPackComplete()
  *
  * @throws runtime_error This function throws a runtime error if the reloading of the file fails. See `LocPackFile::load()` and `LocPackFile::reload()` for more information about loading
  *
- * @param hash The hash in .lockpack version(Big Endian) as a string. No '0x' prefix
+ * @param hash The hash in .lockpack version(Little Endian) as a string. No '0x' prefix
  * @return The 0-based index of a line as an int. -1 if line is not found.
  */
 int LocPackFile::findHashIndex(const std::string& hash)
@@ -213,7 +213,7 @@ int LocPackFile::findHashIndex(const std::string& hash)
  * @throws runtime_error This function uses the `LocPackFile::findHashIndex()` function and therefore throws an exception if the reload of a file fails. <br>
  * See `LocPackFile::load()` and `LocPackFile::reload()` for more information.
  *
- * @param hash The hash in .lockpack version(Big Endian) as a string. No '0x' prefix.
+ * @param hash The hash in .lockpack version(Little Endian) as a string. No '0x' prefix.
  * @return A `LocaleLine` object with the information of the read line.
  */
 LocaleLine LocPackFile::findFromHash(const std::string& hash)
@@ -255,8 +255,46 @@ LocaleLine LocPackFile::findFromHash(const std::string& hash)
     return LocaleLine{readLine[0], content, fields};
 }
 
-void LocPackFile::writeEntry(const std::string& hash, int character, int unknown, const std::string& content,
-                             bool overwrite)
+/**
+ * @brief Adds the changes to the change cache
+ *
+ * This function adds a change to the `LocPackFile::m_changeCache` variable, thereby saving it in a queue of changes
+ * to be executed on the localization files or to be serialized to JSON.
+ *
+ * @param hash The hash in .lockpack version(Little Endian) as a string. No '0x' prefix.
+ * @param fields A vector of integer fields to put in the files.
+ * @param content The new content of the localization line.
+ */
+void LocPackFile::addChanges(const std::string& hash, const vector<int>& fields, const std::string& content)
 {
-    // TODO: Fill out stub!!!
+    if (!reload()) throw runtime_error("Reloading file path at '" + m_locPackFilePath.string() + "' failed.");
+
+    string formattedHash = hash;
+    ranges::transform(formattedHash, formattedHash.begin(), ::toupper);
+
+    auto it = m_hashCache.find(formattedHash);
+    if (it == m_hashCache.end())
+    {
+        throw runtime_error("Hash " + hash + " not found!");
+    }
+
+    const int rowIndex = it->second;
+
+    if (fields.size() + 2 != m_fieldNumber)
+    {
+        throw runtime_error(
+            "Number of fields does not match number of columns in the .locpack file. Cannot write entry.");
+    }
+
+    vector<string> newRow;
+    newRow.reserve(m_fieldNumber);
+
+    newRow.push_back(formattedHash);
+    for (int i = 0; i < fields.size(); i++)
+    {
+        newRow.push_back(std::to_string(fields[i]));
+    }
+    newRow.push_back(content);
+
+    m_changeCache[rowIndex] = std::move(newRow);
 }

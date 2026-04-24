@@ -14,6 +14,7 @@ private:
     std::filesystem::file_time_type m_lastLoadTime;
 
     std::unordered_map<std::string, int> m_hashCache;
+    std::unordered_map<int, std::vector<std::string>> m_changeCache;
 
     unsigned int m_fieldNumber;
 
@@ -40,5 +41,6 @@ public:
 
     [[nodiscard]] LocaleLine findFromHash(const std::string& hash);
 
-    void writeEntry(const std::string& hash, int character, int unknown, const std::string& content, bool overwrite);
+    void addChanges(const std::string& hash, const std::vector<int>& fields, const std::string& content);
+    void writeEntry();
 };
