@@ -32,8 +32,6 @@ public:
     void setContent(const std::string& content);
     void setConvertedContent(const std::string& convertedContent);
     void setFields(const std::vector<int>& fields);
-
-    void convertHash();
 };
 
 #endif //FOPTRANSAPP_FINAL_LOCALELINE_H

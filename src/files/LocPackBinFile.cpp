@@ -38,11 +38,28 @@ LocPackBinFile::LocPackBinFile(const std::filesystem::path& path)
     m_filePath = path;
 }
 
-BlockInfo::BlockInfo(const int size, const uint16_t length, std::string text) :
-    m_offset(size), m_length(length), m_text(std::move(text))
+/**
+ * @brief The constructor for the `BlockInfo` struct.
+ *
+ * The constructor with all the parameters for the `BlockInfo` struct.
+ *
+ * @param offset The offset of a given block
+ * @param fieldCount The number of integer fields.
+ * @param length The length of a given block of information
+ * @param text The actual text contained in the .locpackbin file.
+ */
+BlockInfo::BlockInfo(const int offset, const int fieldCount, const uint16_t length, std::string text) :
+    m_offset(offset), m_fieldCount(fieldCount), m_length(length), m_text(std::move(text))
 {
 }
 
+/**
+ * @brief This function loads a .locpackbin file into memory.
+ *
+ * This functions uses the path in the `LocPackBinFile::m_filePath` variable to load a given .locpackbin file into memory for the program to use.
+ *
+ * @return `true` if the file has successfully been loaded, `false` otherwise.
+ */
 bool LocPackBinFile::load() const
 {
     bool testsPassed = true;
@@ -68,6 +85,14 @@ bool LocPackBinFile::load() const
     return true;
 }
 
+/**
+ * @brief Reads the information from a .locpackbin file into memory.
+ *
+ * Mainly a helper function for the `LocPackBinFile::load()` function. <br>
+ * Uses the `LocPackBinFile::m_filePath` variable to get the file and its contents and parse them to memory for use by the program.
+ *
+ * @return `true` if the reading and parsing was successful, `false` otherwise.
+ */
 bool LocPackBinFile::readFile() const
 {
     ifstream input(m_filePath, ios::binary | ios::ate);
@@ -92,16 +117,20 @@ bool LocPackBinFile::readFile() const
     return false;
 }
 
-std::filesystem::path LocPackBinFile::getPath() const
-{
-    return m_filePath;
-}
-
 void LocPackBinFile::setPath(const std::filesystem::path& path)
 {
     m_filePath = path;
 }
 
+/**
+ * @brief Converts a hash string to its big endian byte version.
+ *
+ * This function converts a hash from the .locpackbin file to an array of 16 bytes contaning the hash. <br>
+ * Used to convert the hash from a .locpack... file to the hash version in a .locpack... file
+ *
+ * @param hash The hash in .lockpackbin version(Little Endian) as a string. No '0x' prefix.
+ * @return An array of length 16 with the converted hash.
+ */
 std::array<uint8_t, 16> LocPackBinFile::hashToBytes(const std::string& hash)
 {
     auto hexToVal = [](const char c) -> uint8_t
@@ -123,6 +152,15 @@ std::array<uint8_t, 16> LocPackBinFile::hashToBytes(const std::string& hash)
     return hashBytes;
 }
 
+/**
+ * @brief Fetches the text from a .locpackbin files by its hash string
+ *
+ * This function fetches a specific line of text from the .locpackbin file by its hash string.
+ * It then returns a `BlockInfo` object with the information of the line, including the integer fields.
+ *
+ * @param hash A string of hex-bytes containing the hash of a specific line.
+ * @return `BlockInfo` object with the information of the line, including the integer fields.
+ */
 BlockInfo LocPackBinFile::getTextByHash(const std::string& hash) const
 {
     array<uint8_t, 16> hashBytes = hashToBytes(hash);
@@ -138,4 +176,37 @@ BlockInfo LocPackBinFile::getTextByHash(const std::string& hash) const
     if (const size_t findIndex = distance(m_fileContent.begin(), searchRange.begin()))
     {
     }
+}
+
+/**
+ * @brief Flips the endianness of a string of hex bytes.
+ *
+ * This function flips the endianness of a string of hex bytes.
+ *
+ * @param hex The string of hex bytes to flip the endianness of.
+ * @param byteChunkSize The size of a word that gets flipped. Needs to be the exact size, not a maximum!
+ * @attention Changes the hex string in-place. No return.
+ */
+void LocPackBinFile::flipEndianness(std::string& hex, const size_t byteChunkSize)
+{
+    if (hex.length() % 2 != 0) return;
+
+    // Convert byte size to character size (2 chars per byte)
+    const size_t charChunkSize = byteChunkSize * 2;
+
+    std::string result;
+    result.reserve(hex.length());
+
+    for (size_t i = 0; i < hex.length(); i += charChunkSize)
+    {
+        std::string chunk = hex.substr(i, charChunkSize);
+
+        // Flip bytes within this chunk
+        for (int j = static_cast<int>(chunk.length()) - 2; j >= 0; j -= 2)
+        {
+            result += chunk.substr(j, 2);
+        }
+    }
+
+    hex = result;
 }

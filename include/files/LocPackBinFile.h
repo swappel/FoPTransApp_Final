@@ -9,12 +9,12 @@
 struct BlockInfo
 {
     int m_offset{};
+    int m_fieldCount{};
     uint16_t m_length{};
     std::string m_text;
 
     BlockInfo() = default;
-
-    explicit BlockInfo(int size, uint16_t length, std::string text);
+    explicit BlockInfo(int offset, int fieldCount, uint16_t length, std::string text);
 };
 
 using byte = uint8_t;
@@ -38,8 +38,10 @@ public:
 
     void updateEntry(const std::string& hexHash, int val1, int val2, const std::string& newText) const;
 
-    [[nodiscard]] std::filesystem::path getPath() const;
+    [[nodiscard]] const std::filesystem::path& getPath() { return m_filePath; }
     void setPath(const std::filesystem::path& path);
+
+    static void flipEndianness(std::string& hex, size_t byteChunkSize = 8);
 };
 
 #endif //FOPTRANSAPP_FINAL_LOCPACKBINFILE_H

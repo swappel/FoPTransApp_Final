@@ -69,34 +69,4 @@ void LocaleLine::setFields(const std::vector<int>& fields)
     m_fields = fields;
 }
 
-/**
- * @brief Converts a hash from Big to Little Endian
- *
- * Converts a hash from Big to Little Endian.<br>
- * Converts the hash stored in `LocaleLine::m_hash` tores the result in `LocaleLine::m_convertedHash`.<br>
- * If the hash is invalid(not 16 bytes long), nothing is stored. Function therefor fails silently.
- */
-void LocaleLine::convertHash()
-{
-    if (m_hash.length() != 32) return;
 
-    const std::string firstHalf = m_hash.substr(0, 16);
-    const std::string secondHalf = m_hash.substr(16, 16);
-
-    std::string convertedString;
-    convertedString.reserve(32);
-
-    // Reverse the first 8 bytes (16 characters)
-    for (int i = 14; i >= 0; i -= 2)
-    {
-        convertedString += firstHalf.substr(i, 2);
-    }
-
-    // Reverse the second 8 bytes (16 characters)
-    for (int i = 14; i >= 0; i -= 2)
-    {
-        convertedString += secondHalf.substr(i, 2);
-    }
-
-    m_convertedHash = convertedString;
-}
