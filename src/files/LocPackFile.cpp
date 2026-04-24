@@ -10,7 +10,6 @@
 using namespace std;
 
 // Use the already defined classes and methods in the old backend project.
-
 // TODO: Write in the .locpack file
 
 /**
@@ -57,6 +56,14 @@ void convertReadContent(string& content)
     );
 }
 
+/**
+ * @brief Rebuilds the Hash-Cache
+ *
+ * Rebuilds the Hash-Cache containing the different hashes corresponding to the different lines in a given file.<br>
+ * Saves the results in `LocPackFile::m_hashCache` as an unordered_map<std::string, int> with the string being the hash and the int being the line number.<br>
+ * <br>
+ * Starts counting on line 2 to avoid the header common to all .locpack files.
+ */
 void LocPackFile::rebuildCache()
 {
     m_hashCache.clear();
