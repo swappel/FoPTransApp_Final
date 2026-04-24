@@ -7,14 +7,15 @@
 
 #include "files/LocPackBinFile.h"
 
+#include <cstring>
 #include <utility>
 
 #include "rapidcsv.h"
+#include "files/LocPackFile.h"
 
 #define HASH_WIDTH_BYTES 16
-#define NUMBER_WIDTH_BYTES 4
+#define FIELD_WIDTH_BYTES 4
 #define LENGTH_WIDTH_BYTES 2
-
 
 using namespace std;
 
@@ -44,12 +45,12 @@ LocPackBinFile::LocPackBinFile(const std::filesystem::path& path)
  * The constructor with all the parameters for the `BlockInfo` struct.
  *
  * @param offset The offset of a given block
- * @param fieldCount The number of integer fields.
  * @param length The length of a given block of information
+ * @param fields
  * @param text The actual text contained in the .locpackbin file.
  */
-BlockInfo::BlockInfo(const int offset, const int fieldCount, const uint16_t length, std::string text) :
-    m_offset(offset), m_fieldCount(fieldCount), m_length(length), m_text(std::move(text))
+BlockInfo::BlockInfo(const int& offset, const uint16_t& length, const std::vector<int>& fields, std::string text) :
+    m_offset(offset), m_length(length), m_fields(fields), m_text(std::move(text))
 {
 }
 
@@ -60,14 +61,14 @@ BlockInfo::BlockInfo(const int offset, const int fieldCount, const uint16_t leng
  *
  * @return `true` if the file has successfully been loaded, `false` otherwise.
  */
-bool LocPackBinFile::load() const
+bool LocPackBinFile::load()
 {
     bool testsPassed = true;
 
     // Test conditions to indicate whether the path exists or not.
     if (!filesystem::exists(m_filePath)) testsPassed = false;
     if (filesystem::is_directory(m_filePath)) testsPassed = false;
-    if (m_filePath.extension() != ".locpack") testsPassed = false;
+    if (m_filePath.extension() != ".locpackbin") testsPassed = false;
 
     if (!testsPassed) throw runtime_error("The file at path '" + m_filePath.string() + "' could not be loaded.");
 
@@ -158,24 +159,61 @@ std::array<uint8_t, 16> LocPackBinFile::hashToBytes(const std::string& hash)
  * This function fetches a specific line of text from the .locpackbin file by its hash string.
  * It then returns a `BlockInfo` object with the information of the line, including the integer fields.
  *
- * @param hash A string of hex-bytes containing the hash of a specific line.
+ * @param hash A string of hex-bytes containing the hash of a specific line. Little Endian.
+ * @param locPackFile
+ *
  * @return `BlockInfo` object with the information of the line, including the integer fields.
  */
-BlockInfo LocPackBinFile::getTextByHash(const std::string& hash) const
+BlockInfo LocPackBinFile::getTextByHash(const std::string& hash, const LocPackFile& locPackFile) const
 {
-    array<uint8_t, 16> hashBytes = hashToBytes(hash);
+    // Fetch the length of the fields
+    const unsigned int fieldCount = locPackFile.getFieldNumber();
+    const unsigned int integerFieldCount = fieldCount - 2;
 
+    // Prepare the hash for search
+    string beHash = hash;
+    flipEndianness(beHash);
+    array<uint8_t, 16> hashBytes = hashToBytes(beHash);
+
+    // Search hashBytes in fileContent vector
     auto searchRange = ranges::search(m_fileContent, hashBytes);
-
     if (searchRange.empty())
     {
-        printf("Hash not found: %s", hash.c_str());
+        cerr << "Hash not found: " << hash << endl;
         return {};
     }
 
-    if (const size_t findIndex = distance(m_fileContent.begin(), searchRange.begin()))
+    const size_t startIndex = distance(m_fileContent.begin(), searchRange.begin());
+
+    // Read the integer fields
+    vector<int> fields;
+    for (int i = 0; i < integerFieldCount; i++)
     {
+        const size_t fieldOffset = startIndex + HASH_WIDTH_BYTES + (i * FIELD_WIDTH_BYTES);
+
+        fields.emplace_back(readBigEndian<int>(&m_fileContent[fieldOffset]));
     }
+
+    // Read the text length
+    const size_t textLengthPosition = startIndex + HASH_WIDTH_BYTES + (integerFieldCount * FIELD_WIDTH_BYTES);
+    if (textLengthPosition + LENGTH_WIDTH_BYTES > m_fileContent.size())
+    {
+        throw runtime_error("The given text length position is non contained in the loaded file content.");
+    }
+
+    const auto textLen = readBigEndian<uint16_t>(&m_fileContent[textLengthPosition]);
+
+    // Read the text
+    const size_t textOffset = textLengthPosition + LENGTH_WIDTH_BYTES;
+    if (textOffset + textLen > m_fileContent.size())
+    {
+        throw runtime_error("File content is too short to contain requested data.");
+    }
+
+    string text;
+    text.assign(reinterpret_cast<const char*>(&m_fileContent[textOffset]), textLen);
+
+    return BlockInfo(static_cast<int>(startIndex), textLen, fields, text);
 }
 
 /**
