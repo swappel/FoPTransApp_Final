@@ -1,5 +1,7 @@
 # FoP-Translator
 
+The application is not yet downloadable. It is still under heavy development. Thanks for your patience.
+
 ## About this application
 
 This application allows you to contribute to the Avatar: Frontiers of Pandora Na'vi Localization project.
