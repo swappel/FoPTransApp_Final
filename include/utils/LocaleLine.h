@@ -1,40 +1,39 @@
 #ifndef FOPTRANSAPP_FINAL_LOCALELINE_H
 #define FOPTRANSAPP_FINAL_LOCALELINE_H
 #include <string>
+#include <vector>
 
 class LocaleLine
 {
+private:
     std::string m_hash;
     std::string m_convertedHash;
-    int m_character;
-    int m_unknown;
+    std::vector<int> m_fields;
     std::string m_content;
     std::string m_convertedContent;
 
     //void convertContent();
-    void convertHash();
 
 public:
     LocaleLine();
-    LocaleLine(const std::string& hash, const std::string& content, int character, int unknown);
-    LocaleLine(const std::string& hash, const std::string& convertedHash, const std::string& content,
-               const std::string& convertedContent,
-               int character,
-               int unknown
+    LocaleLine(std::string hash, std::string content, const std::vector<int>& fields);
+    LocaleLine(std::string hash, std::string convertedHash, std::string content,
+               std::string convertedContent,
+               const std::vector<int>& fields
     );
-    [[nodiscard]] std::string getHash() const;
-    [[nodiscard]] std::string getConvertedHash() const;
-    [[nodiscard]] std::string getContent() const;
-    [[nodiscard]] std::string getConvertedContent() const;
-    [[nodiscard]] int getCharacter() const;
-    [[nodiscard]] int getUnknown() const;
+    [[nodiscard]] const std::string& getHash() const { return m_hash; }
+    [[nodiscard]] const std::string& getConvertedHash() const { return m_convertedHash; }
+    [[nodiscard]] const std::string& getContent() const { return m_content; }
+    [[nodiscard]] const std::string& getConvertedContent() const { return m_convertedContent; }
+    [[nodiscard]] const std::vector<int>& getFields() const { return m_fields; }
 
     void setHash(const std::string& hash);
     void setConvertedHash(const std::string& convertedHash);
     void setContent(const std::string& content);
     void setConvertedContent(const std::string& convertedContent);
-    void setCharacter(const int character);
-    void setUnknown(const int unknown);
+    void setFields(const std::vector<int>& fields);
+
+    void convertHash();
 };
 
 #endif //FOPTRANSAPP_FINAL_LOCALELINE_H
