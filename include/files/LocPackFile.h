@@ -25,8 +25,10 @@ public:
     LocPackFile();
     explicit LocPackFile(std::filesystem::path path);
 
+    [[nodiscard]] const std::filesystem::path& getPath() const { return m_locPackFilePath; }
+    [[nodiscard]] const unsigned int& getFieldNumber() const { return m_fieldNumber; }
+
     void setPath(const std::filesystem::path& path);
-    [[nodiscard]] std::filesystem::path getPath() const;
 
     bool load();
     bool reload();

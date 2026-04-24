@@ -28,12 +28,7 @@ LocPackFile::LocPackFile(std::filesystem::path path) : m_locPackFilePath(std::mo
 {
 }
 
-// Getters and setters
-filesystem::path LocPackFile::getPath() const
-{
-    return m_locPackFilePath;
-}
-
+// Setter
 void LocPackFile::setPath(const filesystem::path& path)
 {
     m_locPackFilePath = path;
