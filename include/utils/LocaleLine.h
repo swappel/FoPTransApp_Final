@@ -32,4 +32,7 @@ public:
     void setContent(const std::string& content);
     void setConvertedContent(const std::string& convertedContent);
     void setFields(const std::vector<int>& fields);
+
+    // TODO: Complete stub
+    void writeLineToFiles();
 };
