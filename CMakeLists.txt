@@ -18,7 +18,9 @@ add_executable(FoPTransApp_Final src/main.cpp
         src/utils/LocaleLine.cpp
         include/utils/LocaleLine.h
         include/files/FileManager.h
-        src/files/FileManager.cpp)
+        src/files/FileManager.cpp
+        include/ui/MainUI.h
+        src/ui/MainUI.cpp)
 
 target_include_directories(FoPTransApp_Final PUBLIC include)
 target_link_libraries(FoPTransApp_Final PRIVATE
