@@ -87,6 +87,30 @@ bool LocPackBinFile::load()
 }
 
 /**
+ * @brief Reloads the file
+ *
+ * This function only reloads the file if said file has been edited.
+ * This is checked by looking at the last write timestamp.
+ *
+ * @return Returns a boolean with value `true` if function ran without an error, `false` otherwise.
+ */
+bool LocPackBinFile::reload()
+{
+    if (!filesystem::exists(m_filePath)) return false;
+
+    // Create the currentModTime(currently last modification time of the file) and compare it with the last time the file was loaded in this program.
+    if (const auto currentModTime = filesystem::last_write_time(m_filePath);
+        currentModTime > m_lastLoadTime)
+    {
+        printf("Reloading the .locpackbin file...");
+
+        return load();
+    }
+
+    return true;
+}
+
+/**
  * @brief Reads the information from a .locpackbin file into memory.
  *
  * Mainly a helper function for the `LocPackBinFile::load()` function. <br>
@@ -160,14 +184,14 @@ std::array<uint8_t, 16> LocPackBinFile::hashToBytes(const std::string& hash)
  * It then returns a `BlockInfo` object with the information of the line, including the integer fields.
  *
  * @param hash A string of hex-bytes containing the hash of a specific line. Little Endian.
- * @param locPackFile
+ * @param locPackFile A `LocPackFile` object.
  *
  * @return `BlockInfo` object with the information of the line, including the integer fields.
  */
 BlockInfo LocPackBinFile::getTextByHash(const std::string& hash, const LocPackFile& locPackFile) const
 {
     // Fetch the length of the fields
-    const unsigned int fieldCount = locPackFile.getFieldNumber();
+    const unsigned int fieldCount = locPackFile.getFieldCount();
     const unsigned int integerFieldCount = fieldCount - 2;
 
     // Prepare the hash for search

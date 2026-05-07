@@ -52,6 +52,8 @@ public:
     explicit LocPackBinFile(const std::filesystem::path& path);
 
     bool load();
+    bool reload();
+
     bool readFile() const;
     [[nodiscard]] BlockInfo getTextByHash(const std::string& hash, const LocPackFile& locPackFile) const;
 
