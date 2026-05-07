@@ -18,11 +18,6 @@
 #define LENGTH_WIDTH_BYTES 2
 
 using namespace std;
-
-// Use the already defined classes and methods in the old backend project.
-
-// TODO: Fetch the .locpackbin file
-// TODO: Parse the .locpackbin file
 // TODO: Write in the .locpackbin file
 
 /**
