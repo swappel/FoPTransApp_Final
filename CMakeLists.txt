@@ -16,7 +16,9 @@ add_executable(FoPTransApp_Final src/main.cpp
         src/utils/DataSerializer.cpp
         include/utils/DataSerializer.h
         src/utils/LocaleLine.cpp
-        include/utils/LocaleLine.h)
+        include/utils/LocaleLine.h
+        include/files/FileManager.h
+        src/files/FileManager.cpp)
 
 target_include_directories(FoPTransApp_Final PUBLIC include)
 target_link_libraries(FoPTransApp_Final PRIVATE
