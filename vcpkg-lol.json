@@ -6,14 +6,7 @@
     "cpputest",
     "nlohmann-json",
     "imgui",
-    "http-parser",
-    "libgit2",
-    "openssl",
-    "pcre",
-    "zlib",
     "rapidcsv",
-    "fkyaml",
-    "vcpkg-cmake-get-vars",
     "vcpkg-cmake-config",
     "vcpkg-cmake"
   ]

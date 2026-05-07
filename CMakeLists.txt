@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.2)
+cmake_minimum_required(VERSION 4.1.2)
 project(FoPTransApp_Final)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(CppUTest CONFIG REQUIRED)
 find_package(rapidcsv CONFIG REQUIRED)
-find_package(fkYAML CONFIG REQUIRED)
-find_package(libgit2 CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 
 add_executable(FoPTransApp_Final src/main.cpp
@@ -25,7 +23,5 @@ target_link_libraries(FoPTransApp_Final PRIVATE
         nlohmann_json::nlohmann_json
         CppUTest
         rapidcsv::rapidcsv
-        fkYAML::fkYAML
-        libgit2::libgit2package
         imgui::imgui
 )
