@@ -23,23 +23,22 @@ private:
 
 public:
     LocPackFile();
-    explicit LocPackFile(std::filesystem::path path);
+    explicit LocPackFile(const std::filesystem::path& path);
 
     [[nodiscard]] const std::filesystem::path& getPath() const { return m_locPackFilePath; }
-    [[nodiscard]] const unsigned int& getFieldNumber() const { return m_fieldNumber; }
+    [[nodiscard]] unsigned int getFieldCount() const { return m_fieldNumber; }
+    [[nodiscard]] size_t getEntryCount() const { return m_document->GetRowCount(); }
 
     void setPath(const std::filesystem::path& path);
 
     bool load();
     bool reload();
 
-    // TODO: Decide if necessary, since not remote project anymore
-    //[[nodiscard]] std::vector<LocaleLine> parseLocPackRange(int offset, int amount);
-
     [[nodiscard]] std::vector<LocaleLine> parseLocPackComplete();
     [[nodiscard]] int findHashIndex(const std::string& hash);
 
     [[nodiscard]] LocaleLine findFromHash(const std::string& hash);
+    [[nodiscard]] LocaleLine findFromIndex(const int index);
 
     void addChanges(const std::string& hash, const std::vector<int>& fields, const std::string& content);
     void writeEntry();

@@ -24,7 +24,7 @@ LocPackFile::LocPackFile() = default;
  *
  * @param path A path to a .locpack file.
  */
-LocPackFile::LocPackFile(std::filesystem::path path) : m_locPackFilePath(std::move(path))
+LocPackFile::LocPackFile(const std::filesystem::path& path) : m_locPackFilePath(std::move(path))
 {
 }
 
@@ -175,7 +175,7 @@ vector<LocaleLine> LocPackFile::parseLocPackComplete()
             fields.emplace_back(stoi(readStrings[j]));
         }
 
-        lines.emplace_back(readStrings[0], readStrings[m_fieldNumber - 1], fields);
+        lines.emplace_back(readStrings[0], fields, readStrings[m_fieldNumber - 1]);
     }
 
     return lines;
@@ -218,6 +218,8 @@ int LocPackFile::findHashIndex(const std::string& hash)
  */
 LocaleLine LocPackFile::findFromHash(const std::string& hash)
 {
+    if (!reload()) throw runtime_error("Reloading file path at '" + m_locPackFilePath.string() + "' failed.");
+
     const int foundIndex = findHashIndex(hash);
     if (foundIndex == -1)
     {
@@ -252,7 +254,58 @@ LocaleLine LocPackFile::findFromHash(const std::string& hash)
         }
     }
 
-    return LocaleLine{readLine[0], content, fields};
+    return LocaleLine{readLine[0], fields, content};
+}
+
+/**
+* @brief Finds a line by its index in a .locpack file.
+*
+* @throws runtime_error This function uses the `LocPackFile::findHashIndex()` function and therefore throws an exception if the reload of a file fails. <br>
+* See `LocPackFile::load()` and `LocPackFile::reload()` for more information. <br>
+* Also throws an exception if the index is out of bounds from the file.
+*
+* @param index The index in the .locpack file to search at.
+* @return A `LocaleLine` object with the information of the read line.
+ */
+LocaleLine LocPackFile::findFromIndex(const int index)
+{
+    if (!reload()) throw runtime_error("Reloading file path at '" + m_locPackFilePath.string() + "' failed.");
+
+    size_t fileLineCount = this->m_document->GetRowCount();
+
+    if (index > fileLineCount)
+    {
+        throw runtime_error("Index out of bounds for .locpack file.");
+    }
+
+    vector<string> foundRow;
+    foundRow.reserve(m_fieldNumber);
+    foundRow = m_document->GetRow<string>(index);
+
+    // Get the hash
+    const string hash = foundRow[0];
+
+    // Get the fields
+    vector<int> fields;
+    fields.reserve(m_fieldNumber - 2);
+
+    // Get the line content
+    string lineContent = foundRow[m_fieldNumber - 1];
+    convertReadContent(lineContent);
+
+    for (int j = 1; j < m_fieldNumber - 1; j++)
+    {
+        try
+        {
+            fields.emplace_back(stoi(foundRow[j]));
+        }
+        catch (...)
+        {
+            fields.emplace_back(0);
+        }
+    }
+
+    return LocaleLine{hash, fields, lineContent};
 }
 
 /**
