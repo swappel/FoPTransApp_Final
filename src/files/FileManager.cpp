@@ -61,3 +61,15 @@ vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile
 
    return errorList;
 }
+
+void readFiles(const std::filesystem::path& locPackPath, const std::filesystem::path& locPackBinPath)
+{
+   // TODO: Stub for readFiles function
+
+   // TODO: Is this even necessary?
+}
+
+void writeFiles(LocPackFile& locPackFile, LocPackBinFile& locPackBinFile)
+{
+   // TODO: Stub for writeFiles function
+}
