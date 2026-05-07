@@ -127,7 +127,7 @@ bool LocPackFile::reload()
     if (const auto currentModTime = filesystem::last_write_time(m_locPackFilePath);
         currentModTime > m_lastLoadTime)
     {
-        printf("Reloading the file...");
+        printf("Reloading the .locpack file...");
 
         return load();
     }
