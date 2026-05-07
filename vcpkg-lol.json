@@ -4,8 +4,8 @@
   "builtin-baseline" : "e778080f0d8019247d332ef3a3df1202578ca202",
   "dependencies" : [
     "cpputest",
-    "ftxui",
     "nlohmann-json",
+    "imgui",
     "http-parser",
     "libgit2",
     "openssl",
