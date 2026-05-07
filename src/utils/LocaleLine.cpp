@@ -20,7 +20,7 @@ LocaleLine::LocaleLine() = default;
  * @param content The content of a given line. UTF-8
  * @param fields A vector of integers representing the fields in the file(excluding hash and text)
  */
-LocaleLine::LocaleLine(std::string hash, std::string content, const vector<int>& fields) :
+LocaleLine::LocaleLine(std::string hash, const vector<int>& fields, std::string content) :
     m_hash(std::move(hash)), m_fields(fields), m_content(std::move(content))
 {
 }
@@ -36,8 +36,8 @@ LocaleLine::LocaleLine(std::string hash, std::string content, const vector<int>&
  * @param convertedContent The content of a given line. ASCII with UTF-8 encoded characters included.
  * @param fields A vector of integers representing the fields in the file(excluding hash and text)
  */
-LocaleLine::LocaleLine(std::string hash, std::string convertedHash, std::string content,
-                       std::string convertedContent, const vector<int>& fields) :
+LocaleLine::LocaleLine(std::string hash, std::string convertedHash, const vector<int>& fields, std::string content,
+                       std::string convertedContent) :
     m_hash(std::move(hash)), m_convertedHash(std::move(convertedHash)), m_fields(fields),
     m_content(std::move(content)), m_convertedContent(std::move(convertedContent))
 {

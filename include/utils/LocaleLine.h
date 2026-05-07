@@ -16,10 +16,11 @@ private:
 
 public:
     LocaleLine();
-    LocaleLine(std::string hash, std::string content, const std::vector<int>& fields);
-    LocaleLine(std::string hash, std::string convertedHash, std::string content,
-               std::string convertedContent,
-               const std::vector<int>& fields
+    LocaleLine(std::string hash, const std::vector<int>& fields, std::string content);
+    LocaleLine(std::string hash, std::string convertedHash,
+               const std::vector<int>& fields,
+               std::string content,
+               std::string convertedContent
     );
     [[nodiscard]] const std::string& getHash() const { return m_hash; }
     [[nodiscard]] const std::string& getConvertedHash() const { return m_convertedHash; }
