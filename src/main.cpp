@@ -1,3 +1,5 @@
+#include "ui/MainUI.h"
+
 int main()
 {
     // TODO: Implement general loop for app
@@ -5,4 +7,6 @@ int main()
     // TODO: Implement pre-save cache for changes
     // TODO: Implement change review
     // TODO: Implement instant search in ui
+
+
 }

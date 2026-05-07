@@ -7,7 +7,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(CppUTest CONFIG REQUIRED)
 find_package(rapidcsv CONFIG REQUIRED)
 
-add_subdirectory(lib/imgui)
+add_subdirectory(lib/imgui-1.92.7)
 
 add_executable(FoPTransApp_Final src/main.cpp
         src/files/LocPackFile.cpp
