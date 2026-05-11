@@ -16,8 +16,12 @@ int main()
     // Setup Dear ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+
+    ImGui::StyleColorsDark();
+
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.Fonts->AddFontDefault();
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -25,6 +29,12 @@ int main()
 
     // Initialize UI Controller
     MainUI myUI;
+
+    std::filesystem::path locPackPath    = "menus.locpack";
+    std::filesystem::path locPackBinPath = "menus.locpackbin";
+
+    myUI.LoadProject(locPackPath, locPackBinPath);
+
     // TODO: Load files here?
 
     while (!glfwWindowShouldClose(window))

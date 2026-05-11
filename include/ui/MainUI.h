@@ -1,6 +1,8 @@
 #pragma once
 
 #include <imgui.h>
+
+#include "MenuBar.h"
 #include "files/LocPackFile.h"
 #include "files/LocPackBinFile.h"
 
@@ -13,10 +15,14 @@ public:
     // The main render loop for your UI
     void Render();
 
+    bool LoadProject(const std::filesystem::path& locPackPath, const std::filesystem::path& binPath);
 private:
     // File logic instances
     LocPackFile m_locPack;
     LocPackBinFile m_locPackBin;
+
+    // Elelements
+    MenuBar m_MenuBar;
 
     int m_selectedIndex = -1;
     char m_textBuffer[4096] = "";

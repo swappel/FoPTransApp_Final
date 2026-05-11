@@ -16,32 +16,40 @@ void MainUI::Render()
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
+    m_MenuBar.Render();
+
+    // 2. Use WorkPos/WorkSize so this window sits UNDER the menu bar
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
+                                    ImGuiWindowFlags_NoMove |
+                                    ImGuiWindowFlags_NoResize |
+                                    ImGuiWindowFlags_NoBringToFrontOnFocus; // Prevents focus theft
 
     if (ImGui::Begin("Main Editor", nullptr, window_flags))
     {
-        if (ImGui::BeginTable("MainLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
-        {
-            ImGui::TableSetupColumn("Sidebar", ImGuiTableColumnFlags_WidthFixed, 300.0f);
-            ImGui::TableSetupColumn("Editor", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableNextRow();
-
-            // --- LEFT COLUMN: Sidebar with Clipper ---
-            ImGui::TableSetColumnIndex(0);
-            ImGui::BeginChild("SidebarChild");
-            ShowSidebar();
-            ImGui::EndChild();
-
-            // --- RIGHT COLUMN: Editor View ---
-            ImGui::TableSetColumnIndex(1);
-            ImGui::BeginChild("EditorChild");
-            ShowEditor();
-            ImGui::EndChild();
-
-            ImGui::EndTable();
-        }
+        // Your Table/Sidebar logic goes here
     }
     ImGui::End();
+}
+
+bool MainUI::LoadProject(const std::filesystem::path& locPackPath, const std::filesystem::path& binPath)
+{
+    m_locPack.setPath(locPackPath);
+    bool lpSuccess = m_locPack.load();
+
+    m_locPackBin.setPath(binPath);
+    bool lpbSuccess = m_locPackBin.load();
+
+    if (lpSuccess && lpbSuccess) {
+        printf("Successfully loaded files.\n");
+        return true;
+    }
+
+    fprintf(stderr, "Failed to load one or more files.\n");
+    return false;
 }
 
 void MainUI::ShowSidebar()
