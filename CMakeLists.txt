@@ -22,6 +22,8 @@ add_executable(FoPTransApp_Final
         src/utils/LocaleLine.cpp
         src/files/FileManager.cpp
         src/ui/MainUI.cpp
+        src/ui/MenuBar.cpp
+        src/ui/LocaleTable.cpp
 )
 
 target_include_directories(FoPTransApp_Final PUBLIC
