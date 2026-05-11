@@ -2,10 +2,15 @@ project(imgui_library)
 
 file(GLOB IMGUI_SOURCES "*.cpp")
 
-add_library(imgui STATIC ${IMGUI_SOURCES})
-
-target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
+list(APPEND IMGUI_SOURCES
+        "backends/imgui_impl_glfw.cpp"
+        "backends/imgui_impl_opengl3.cpp"
 )
 
-target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/backends)
+add_library(imgui STATIC ${IMGUI_SOURCES})
+
+target_include_directories(imgui PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${CMAKE_CURRENT_SOURCE_DIR}/backends
+)
