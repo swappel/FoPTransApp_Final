@@ -15,7 +15,10 @@ using namespace std;
 /**
  * @brief Standard constructor.
  */
-LocPackFile::LocPackFile() = default;
+LocPackFile::LocPackFile()
+{
+    m_document = std::make_unique<rapidcsv::Document>();
+}
 
 /**
  * @brief Constructor with path to .locpack file.
