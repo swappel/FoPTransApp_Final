@@ -1,31 +1,29 @@
 #include <napi.h>
 #include <string>
 
-std::string TestTranslation(const std::string& input)
-{
-    return "Some sthi was called here: " + input;
-}
-
-Napi::Value TranslateWrapper(const Napi::CallbackInfo& info)
+Napi::Value LoadFilesWrapper(const Napi::CallbackInfo& info)
 {
     Napi::Env env = info.Env();
 
-    if (info.Length() < 1 || !info[0].IsString())
+    if (info.Length() < 2 || !info[0].IsString() || !info[1].IsString())
     {
-        Napi::TypeError::New(env, "String expected").ThrowAsJavaScriptException();
+        Napi::TypeError::New(env, "Expected two string arguments (locpackPath, locpackbinPath)").ThrowAsJavaScriptException();
         return env.Null();
     }
 
-    std::string input = info[0].As<Napi::String>().Utf8Value();
-    std::string result = TestTranslation(input);
+    std::string locpackPath = info[0].As<Napi::String>().Utf8Value();
+    std::string locpackbinPath = info[1].As<Napi::String>().Utf8Value();
 
-    return Napi::String::New(env, result);
+    // TODO: Point to logic here
+
+    return Napi::Boolean::New(env, true);
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
-    exports.Set(Napi::String::New(env, "translateAsset"),
-                Napi::Function::New(env, TranslateWrapper));
+    exports.Set(Napi::String::New(env, "loadFiles"),
+                Napi::Function::New(env, LoadFilesWrapper));
+
     return exports;
 }
 
