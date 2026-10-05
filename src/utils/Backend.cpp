@@ -22,5 +22,13 @@ unsigned int Backend::countLines() const
 
 std::vector<int> Backend::verify(std::function<void(int)> onProgress)
 {
-    return verifyFiles(locpackFile, locpackbinFile, onProgress);
+    try {
+        return verifyFiles(locpackFile, locpackbinFile, onProgress);
+    } catch (const std::exception& e) {
+        printf("Error during verification: %s\n", e.what());
+        return {};
+    } catch (...) {
+        printf("Unknown native error during verification.\n");
+        return {};
+    }
 }
