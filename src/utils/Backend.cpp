@@ -7,8 +7,8 @@ void Backend::loadFiles(const std::string& locpackPath, const std::string& locpa
     locpackFile = LocPackFile(locpackPath);
     locpackbinFile = LocPackBinFile(locpackbinPath);
 
-    locpackFile.reload();
-    locpackbinFile.reload();
+    locpackFile.load();
+    locpackbinFile.load();
 }
 
 unsigned int Backend::countLines() const
