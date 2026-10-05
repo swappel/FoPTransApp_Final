@@ -48,6 +48,12 @@ vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile
 
       BlockInfo locPackBinEntry = locPackBinFile.getTextByHash(hash, locPackFile);
 
+      if (locPackBinEntry.m_offset == -1) {
+         cout << "WARNING: Hash " << hash << " (Index " << i << ") not found in binary file!" << endl;
+         errorList.push_back(i);
+         continue;
+      }
+
       std::string csvContent = sanitize(locPackEntry.getContent());
       std::string binContent = sanitize(locPackBinEntry.m_text);
 
@@ -64,13 +70,15 @@ vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile
          errorList.push_back(i);
       }
 
-      // Compare middle fields
       const auto& lpFields = locPackEntry.getFields();
       const auto& binFields = locPackBinEntry.m_fields;
 
-      for (auto j = 0; j < fieldCount; j++)
+      for (unsigned int j = 0; j < fieldCount; j++)
       {
-         if (lpFields[j] != binFields[j])
+         int lpVal = (j < lpFields.size()) ? lpFields[j] : -1;
+         int binVal = (j < binFields.size()) ? binFields[j] : -1;
+
+         if (lpVal != binVal)
          {
             cout << "WARNING: Field discrepancy at index " << i << " field " << j << endl;
             if (std::find(errorList.begin(), errorList.end(), i) == errorList.end())

@@ -273,3 +273,89 @@ void LocPackBinFile::flipEndianness(std::string& hex, const size_t byteChunkSize
 
     hex = result;
 }
+
+/**
+ * @brief Applies an update to an entry inside m_fileContent in-memory.
+ *        Does NOT write the changes to disk.
+ *
+ * @param hexHash The entry hash in hex string format (Little Endian).
+ * @param val1 The first field integer value.
+ * @param val2 The second field integer value.
+ * @param newText The replacement text content.
+ */
+void LocPackBinFile::applyEntryUpdate(const std::string& hexHash, int val1, int val2, const std::string& newText) const
+{
+    std::string flippedHex = hexHash;
+    LocPackBinFile::flipEndianness(flippedHex, 8);
+
+    std::vector<uint8_t> binaryHash;
+    binaryHash.reserve(HASH_WIDTH_BYTES);
+    for (size_t i = 0; i < flippedHex.length(); i += 2)
+    {
+        std::string byteString = flippedHex.substr(i, 2);
+        auto byte = static_cast<uint8_t>(std::strtol(byteString.c_str(), nullptr, 16));
+        binaryHash.push_back(byte);
+    }
+
+    const auto it = std::ranges::search(m_fileContent, binaryHash).begin();
+    if (it == m_fileContent.end())
+    {
+        throw std::runtime_error("Hash not found: " + hexHash);
+    }
+
+    const size_t startIndex = std::distance(m_fileContent.begin(), it);
+    const size_t val1Offset = startIndex + HASH_WIDTH_BYTES;
+    const size_t val2Offset = val1Offset + FIELD_WIDTH_BYTES;
+    const size_t textLenOffset = val2Offset + FIELD_WIDTH_BYTES;
+
+    if (textLenOffset + LENGTH_WIDTH_BYTES > m_fileContent.size())
+    {
+        throw std::runtime_error("File truncated at target entry.");
+    }
+
+    uint16_t oldTextLen = 0;
+    std::memcpy(&oldTextLen, &m_fileContent[textLenOffset], LENGTH_WIDTH_BYTES);
+
+    const size_t oldTextOffset = textLenOffset + LENGTH_WIDTH_BYTES;
+    const size_t oldBlockEnd = oldTextOffset + oldTextLen;
+
+    if (oldBlockEnd > m_fileContent.size())
+    {
+        throw std::runtime_error("Old string bounds exceed file size.");
+    }
+
+    std::memcpy(&m_fileContent[val1Offset], &val1, sizeof(int32_t));
+    std::memcpy(&m_fileContent[val2Offset], &val2, sizeof(int32_t));
+
+    uint16_t newTextLen = static_cast<uint16_t>(newText.length());
+    std::memcpy(&m_fileContent[textLenOffset], &newTextLen, sizeof(uint16_t));
+
+    const auto textBeginIt = m_fileContent.begin() + oldTextOffset;
+    const auto textEndIt = m_fileContent.begin() + oldBlockEnd;
+
+    auto insertedIt = m_fileContent.erase(textBeginIt, textEndIt);
+    m_fileContent.insert(insertedIt, newText.begin(), newText.end());
+}
+
+/**
+ * @brief Flushes m_fileContent to disk once after all updates are applied.
+ *
+ * @return true if successful, false otherwise.
+ */
+bool LocPackBinFile::save() const
+{
+    std::ofstream output(m_filePath, std::ios::binary | std::ios::trunc);
+    if (!output.is_open())
+    {
+        return false;
+    }
+
+    output.write(reinterpret_cast<const char*>(m_fileContent.data()), m_fileContent.size());
+    if (!output)
+    {
+        return false;
+    }
+
+    m_lastLoadTime = std::filesystem::last_write_time(m_filePath);
+    return true;
+}

@@ -1,9 +1,7 @@
-#include <filesystem>
+#include <iostream>
 
-int main()
-{
-    std::filesystem::path locPackPath    = "menus.locpack";
-    std::filesystem::path locPackBinPath = "menus.locpackbin";
+using namespace std;
 
+int main() {
     return 0;
 }

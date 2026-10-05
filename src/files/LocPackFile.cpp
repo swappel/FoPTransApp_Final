@@ -34,6 +34,31 @@ void LocPackFile::setPath(const filesystem::path& path)
     m_locPackFilePath = path;
 }
 
+void unescapeCsvString(std::string& str) {
+    size_t writeIdx = 0;
+    const size_t len = str.length();
+
+    for (size_t readIdx = 0; readIdx < len; ++readIdx) {
+        if (str[readIdx] == '"' && readIdx + 1 < len && str[readIdx + 1] == '"') {
+            str[writeIdx++] = '"';
+            readIdx++;
+            continue;
+        }
+        str[writeIdx++] = str[readIdx];
+    }
+
+    str.resize(writeIdx);
+}
+
+std::string escapeCsvString(std::string str) {
+    size_t pos = 0;
+    while ((pos = str.find("\"", pos)) != std::string::npos) {
+        str.replace(pos, 1, "\"\"");
+        pos += 2;
+    }
+    return str;
+}
+
 /**
  * @brief Helper to remove '\r' from strings.
  *
@@ -44,6 +69,7 @@ void LocPackFile::setPath(const filesystem::path& path)
  */
 void LocPackFile::convertReadContent(std::string& content)
 {
+    unescapeCsvString(content);
     content.erase(
         ranges::remove(content, '\r').begin(),
         content.end()
@@ -347,7 +373,39 @@ void LocPackFile::addChanges(const std::string& hash, const vector<int>& fields,
     {
         newRow.push_back(std::to_string(field));
     }
-    newRow.push_back(content);
+    string escapedString = escapeCsvString(content);
+
+    newRow.push_back(escapedString);
 
     m_changeCache[rowIndex] = std::move(newRow);
+}
+
+void LocPackFile::writeEntry()
+{
+    if (!m_document)
+    {
+        throw std::runtime_error("Document is not initialized.");
+    }
+
+    if (m_changeCache.empty())
+    {
+        return;
+    }
+
+    for (const auto& [rowIndex, newRow] : m_changeCache)
+    {
+        if (rowIndex >= static_cast<int>(m_document->GetRowCount()))
+        {
+            throw std::runtime_error("Row index " + std::to_string(rowIndex) + " out of bounds.");
+        }
+
+        m_document->SetRow(rowIndex, newRow);
+    }
+
+    m_document->Save(m_locPackFilePath.string());
+
+    m_changeCache.clear();
+    m_lastLoadTime = std::filesystem::last_write_time(m_locPackFilePath);
+
+    rebuildCache();
 }
