@@ -1,12 +1,19 @@
 #include "ui/MenuBar.h"
 
 #include <cstdlib>
+#include <imgui.h>
 
+/**
+ * Function to render the top Navbar
+ */
 void MenuBar::Render() {
-   if (ImGui::BeginMainMenuBar()) { // This stays ABOVE all other windows
+   if (ImGui::BeginMainMenuBar()) {
       if (ImGui::BeginMenu("File")) {
-         if (ImGui::MenuItem("Open...", "Ctrl+O")) { /* logic */ }
-         if (ImGui::MenuItem("Save", "Ctrl+S")) { /* logic */ }
+         if (ImGui::MenuItem("Open...", "Ctrl+O")) { m_fileSelectOpen = true; }
+         if (ImGui::MenuItem("Save", "Ctrl+S"))
+         {
+            // TODO: Logic for file saving
+         }
          ImGui::Separator();
          if (ImGui::MenuItem("Exit", "Alt+F4")) { exit(0); }
          ImGui::EndMenu();
@@ -26,6 +33,9 @@ void MenuBar::Render() {
    }
 }
 
+/**
+ * Function used to display the "File" menu.
+ */
 void MenuBar::ShowFileMenu() {
    if (ImGui::BeginMenu("File")) {
       if (ImGui::MenuItem("Open...", "Ctrl+O")) { /* Trigger callback or event */ }
@@ -36,6 +46,9 @@ void MenuBar::ShowFileMenu() {
    }
 }
 
+/**
+ * Function used to display the "Edit" menu.
+ */
 void MenuBar::ShowEditMenu() {
    if (ImGui::BeginMenu("Edit")) {
       if (ImGui::MenuItem("Undo", "Ctrl+Z")) {}
@@ -44,6 +57,9 @@ void MenuBar::ShowEditMenu() {
    }
 }
 
+/**
+ * Function used to display the "View" menu.
+ */
 void MenuBar::ShowViewMenu() {
    if (ImGui::BeginMenu("View")) {
       static bool show_sidebar = true;

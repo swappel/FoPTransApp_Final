@@ -2,6 +2,8 @@
 #include <string>
 #include <cstring>
 
+#include "files/FileManager.h"
+
 MainUI::MainUI()
     : m_selectedIndex(-1)
 {
@@ -11,14 +13,17 @@ MainUI::MainUI()
 MainUI::~MainUI()
 = default;
 
+/**
+ * Renders the main UI.
+ */
 void MainUI::Render()
 {
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-
     m_MenuBar.Render();
+    if (m_MenuBar.fileSelectOpen) {
+        m_openFileDialog.Open();
+    }
+    m_openFileDialog.Render(&m_MenuBar.fileSelectOpen);
 
-    // 2. Use WorkPos/WorkSize so this window sits UNDER the menu bar
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -26,86 +31,43 @@ void MainUI::Render()
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration |
                                     ImGuiWindowFlags_NoMove |
                                     ImGuiWindowFlags_NoResize |
-                                    ImGuiWindowFlags_NoBringToFrontOnFocus; // Prevents focus theft
+                                    ImGuiWindowFlags_NoBringToFrontOnFocus;
 
     if (ImGui::Begin("Main Editor", nullptr, window_flags))
     {
-        // Your Table/Sidebar logic goes here
+        m_localeTable.Render(m_locPack);
     }
     ImGui::End();
 }
 
-bool MainUI::LoadProject(const std::filesystem::path& locPackPath, const std::filesystem::path& binPath)
+/**
+ * Uses the paths retrieved from the user over the UI to load the localization files.
+ * Also checks for validity.
+ * @param locPackPath The path of the .locpack
+ * @param locPackBinPath The path of the .locpackbin file to edit
+ * @return `true` if the loading of the files was successful, `false` otherwise.
+ */
+bool MainUI::LoadProject(const std::filesystem::path& locPackPath, const std::filesystem::path& locPackBinPath)
 {
     m_locPack.setPath(locPackPath);
     bool lpSuccess = m_locPack.load();
 
-    m_locPackBin.setPath(binPath);
+    m_locPackBin.setPath(locPackBinPath);
     bool lpbSuccess = m_locPackBin.load();
 
-    if (lpSuccess && lpbSuccess) {
-        printf("Successfully loaded files.\n");
-        return true;
-    }
-
-    fprintf(stderr, "Failed to load one or more files.\n");
-    return false;
-}
-
-void MainUI::ShowSidebar()
-{
-    size_t totalLines = m_locPack.getEntryCount();
-
-    if (totalLines == 0)
+    if (!(lpSuccess && lpbSuccess))
     {
-        ImGui::Text("No data loaded.");
-        return;
+        fprintf(stderr, "Failed to load one or more files.\n");
+        return false;
     }
 
-    // 1. Initialize the clipper
-    ImGuiListClipper clipper;
-    clipper.Begin((int)totalLines);
+    // TODO: Lots of text output. Add debug flag somewhere to toggle this.
+    // if (!verifyFiles(m_locPack, m_locPackBin).empty())
+    // {
+    //     fprintf(stderr, "Files are not equal and were not loaded.");
+    //     return false;
+    // }
 
-    // 2. Loop through visible items only
-    while (clipper.Step())
-    {
-        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-        {
-            // Fetch entry data for the specific index
-            LocaleLine line = m_locPack.findFromIndex(i);
-            std::string label = line.getHash();
-
-            // Selection logic
-            bool isSelected = (m_selectedIndex == i);
-            if (ImGui::Selectable(label.c_str(), isSelected))
-            {
-                m_selectedIndex = i;
-                // Update editor buffer with new content
-                strncpy(m_textBuffer, line.getContent().c_str(), sizeof(m_textBuffer));
-            }
-
-            if (isSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-    }
-}
-
-void MainUI::ShowEditor()
-{
-    if (m_selectedIndex == -1)
-    {
-        ImGui::Text("Select a hash from the list to edit.");
-        return;
-    }
-
-    ImGui::Text("Editing Index: %d", m_selectedIndex);
-    ImGui::Separator();
-
-    // Editor for the content
-    if (ImGui::InputTextMultiline("##content", m_textBuffer, IM_ARRAYSIZE(m_textBuffer), ImVec2(-FLT_MIN, -FLT_MIN)))
-    {
-        // Handle live changes or mark as dirty here
-    }
+    printf("Successfully loaded files.\n");
+    return true;
 }

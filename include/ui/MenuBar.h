@@ -1,10 +1,10 @@
 #pragma once
 
-#include <imgui.h>
-
 class MenuBar {
 public:
    MenuBar() = default;
+
+   bool m_fileSelectOpen = false;
 
    void Render();
 
