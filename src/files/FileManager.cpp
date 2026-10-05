@@ -30,7 +30,7 @@ std::string sanitize(std::string s) {
  * @param locPackBinFile The .locpackbin file to check the validity for.
  * @return A vector of integer, representing the indexes of erroneous entries.
  */
-vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile)
+vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile, std::function<void(int)> onProgress)
 {
    locPackFile.reload();
    locPackBinFile.reload();
@@ -41,6 +41,11 @@ vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile
 
    for (auto i = 0; i < locPackFile.getEntryCount(); i++)
    {
+      if (onProgress)
+      {
+         onProgress(i + 1);
+      }
+
       LocaleLine locPackEntry = locPackFile.findFromIndex(i);
       const string& hash = locPackEntry.getHash();
 

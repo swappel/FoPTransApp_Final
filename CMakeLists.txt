@@ -8,6 +8,14 @@ project(FoPTransApp_Final)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_definitions(-DNAPI_VERSION=4)
+
+if (MSVC)
+    add_compile_options(/EHsc)
+else ()
+    add_compile_options(-fexceptions)
+endif ()
+
 include(FetchContent)
 FetchContent_Declare(
         node_addon_api
@@ -26,6 +34,8 @@ add_library(${PROJECT_NAME} SHARED
         src/utils/LocaleLine.cpp
         src/files/FileManager.cpp
         src/utils/addon.cpp
+        src/utils/Backend.cpp
+        src/main.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
