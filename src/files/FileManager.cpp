@@ -41,9 +41,9 @@ vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile
 
    for (auto i = 0; i < locPackFile.getEntryCount(); i++)
    {
-      if (onProgress)
+      if (onProgress && (i % 50 == 0 || i == fieldCount - 1))
       {
-         onProgress(i + 1);
+         onProgress(static_cast<int>(i + 1));
       }
 
       LocaleLine locPackEntry = locPackFile.findFromIndex(i);
