@@ -65,7 +65,7 @@ Napi::Value VerifyFilesWrapper(const Napi::CallbackInfo& info)
                         }
                     } catch (const Napi::Error& e) {
                         // Catches any JS exception thrown during progress update
-                        printf("[Native Addon] Callback Exception: %s\n", e.what());
+                        printf("[Native Addon] Callback Exception: %s\n", e.Message().c_str());
                     } catch (...) {
                         printf("[Native Addon] Unknown Exception in Progress Callback\n");
                     }
