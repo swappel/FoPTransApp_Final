@@ -12,8 +12,6 @@ find_package(rapidcsv CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 
-add_subdirectory(lib/imgui-1.92.7)
-
 add_executable(FoPTransApp_Final
         src/main.cpp
         src/files/LocPackFile.cpp
@@ -25,12 +23,9 @@ add_executable(FoPTransApp_Final
 
 target_include_directories(FoPTransApp_Final PUBLIC
         include
-        lib/imgui-1.92.7
-        lib/imgui-1.92.7/backends
 )
 
 target_link_libraries(FoPTransApp_Final PRIVATE
-        imgui
         nlohmann_json::nlohmann_json
         CppUTest
         rapidcsv::rapidcsv
