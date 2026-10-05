@@ -1,8 +1,23 @@
 #include "files/FileManager.h"
 
+#include <algorithm>
+
 #include "files/LocPackFile.h"
 
 using namespace std;
+
+/**
+ * @brief Removes potential differences present in .locpack files for comparison with .locpackbin.
+ * Helper function to remove `"` surrounding the lines in the .locpack files.
+ * @param s The string to sanitize.
+ * @return The sanitized string with the removed `"`
+ */
+std::string sanitize(std::string s) {
+   if (s.size() >= 2 && s.front() == '"' && s.back() == '"') {
+      s = s.substr(1, s.size() - 2);
+   }
+   return s;
+}
 
 /**
  * @brief Checks if a .locpack and .locpackbin file are the same and returns a list of discrepancies.
@@ -17,41 +32,48 @@ using namespace std;
  */
 vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile)
 {
-   // TODO: Might have to implement check for size discrepancies between the two files(check if both have the same amount of entries).
-
    locPackFile.reload();
    locPackBinFile.reload();
 
    vector<int> errorList;
-   const unsigned int fieldCount = locPackFile.getFieldCount();
 
-   // Loop through all entries in the file to verify the validity
+   const unsigned int fieldCount = locPackFile.getFieldCount() - 2;
+
    for (auto i = 0; i < locPackFile.getEntryCount(); i++)
    {
-      // Get .locpack entry
       LocaleLine locPackEntry = locPackFile.findFromIndex(i);
-
-      // Get hash from .locpack file
       const string& hash = locPackEntry.getHash();
 
-      // Get the .locpackbin entry
+      if (hash.length() < 32) continue;
+
       BlockInfo locPackBinEntry = locPackBinFile.getTextByHash(hash, locPackFile);
 
-      // Compare the entries
-      if (locPackEntry.getContent() != locPackBinEntry.m_text)
+      std::string csvContent = sanitize(locPackEntry.getContent());
+      std::string binContent = sanitize(locPackBinEntry.m_text);
+
+      if (csvContent != binContent)
       {
-         cout << "WARNING: Ćontent of entry with hash \"" << hash << "\" or index" << i << " is invalid!\n";
+         cout << "--------- WARNING: Content mismatch for hash " << hash << " (Index " << i << ") ---------" << endl;
+         cout << "CSV version: [" << csvContent << "]" << endl;
+         cout << "BIN version: [" << binContent << "]" << endl;
+
+         if (csvContent.length() != binContent.length()) {
+            cout << "Size mismatch: CSV is " << csvContent.length() << " chars, BIN is " << binContent.length() << " chars." << endl;
+         }
+
          errorList.push_back(i);
       }
 
-      // Check the middle field content
+      // Compare middle fields
+      const auto& lpFields = locPackEntry.getFields();
+      const auto& binFields = locPackBinEntry.m_fields;
+
       for (auto j = 0; j < fieldCount; j++)
       {
-         if (locPackEntry.getFields()[j] != locPackBinEntry.m_fields[j])
+         if (lpFields[j] != binFields[j])
          {
-            cout << "WARNING: Ćontent of entry with hash \"" << hash << "\" or index" << i << " is invalid!\n";
-            // Check if the entry is not already registered as an error.
-            if (ranges::find(errorList, i) != errorList.end())
+            cout << "WARNING: Field discrepancy at index " << i << " field " << j << endl;
+            if (std::find(errorList.begin(), errorList.end(), i) == errorList.end())
             {
                errorList.push_back(i);
             }
@@ -60,16 +82,4 @@ vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile
    }
 
    return errorList;
-}
-
-void readFiles(const std::filesystem::path& locPackPath, const std::filesystem::path& locPackBinPath)
-{
-   // TODO: Stub for readFiles function
-
-   // TODO: Is this even necessary?
-}
-
-void writeFiles(LocPackFile& locPackFile, LocPackBinFile& locPackBinFile)
-{
-   // TODO: Stub for writeFiles function
 }

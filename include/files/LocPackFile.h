@@ -23,8 +23,7 @@ private:
 
 public:
     LocPackFile();
-    explicit LocPackFile(const std::filesystem::path& path);
-
+    explicit LocPackFile(std::filesystem::path path);
     [[nodiscard]] const std::filesystem::path& getPath() const { return m_locPackFilePath; }
     [[nodiscard]] unsigned int getFieldCount() const { return m_fieldNumber; }
     [[nodiscard]] size_t getEntryCount() const { return m_document->GetRowCount(); }

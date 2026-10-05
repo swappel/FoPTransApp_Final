@@ -2,15 +2,13 @@
  * @file LocPackFile.cpp
  * @brief Implementation of the LocPackFile class that manages .locpack files.
  */
+
 #include "files/LocPackFile.h"
 
 #include <utility>
 #define HEADER_ROW_COUNT 2
 
 using namespace std;
-
-// Use the already defined classes and methods in the old backend project.
-// TODO: Write in the .locpack file
 
 /**
  * @brief Standard constructor.
@@ -27,11 +25,10 @@ LocPackFile::LocPackFile()
  *
  * @param path A path to a .locpack file.
  */
-LocPackFile::LocPackFile(const std::filesystem::path& path) : m_locPackFilePath(std::move(path))
+LocPackFile::LocPackFile(std::filesystem::path path) : m_locPackFilePath(std::move(path))
 {
 }
 
-// Setter
 void LocPackFile::setPath(const filesystem::path& path)
 {
     m_locPackFilePath = path;
@@ -228,7 +225,6 @@ LocaleLine LocPackFile::findFromHash(const std::string& hash)
     {
         printf("Hash %s not found. Try again\n", hash.c_str());
 
-        // TODO: Call the prompt function again here
         return LocaleLine{};
     }
 
@@ -339,16 +335,17 @@ void LocPackFile::addChanges(const std::string& hash, const vector<int>& fields,
     if (fields.size() + 2 != m_fieldNumber)
     {
         throw runtime_error(
-            "Number of fields does not match number of columns in the .locpack file. Cannot write entry.");
+            "Number of fields does not match number of columns in the .locpack file. Cannot write entry."
+        );
     }
 
     vector<string> newRow;
     newRow.reserve(m_fieldNumber);
 
     newRow.push_back(formattedHash);
-    for (int i = 0; i < fields.size(); i++)
+    for (const int field : fields)
     {
-        newRow.push_back(std::to_string(fields[i]));
+        newRow.push_back(std::to_string(field));
     }
     newRow.push_back(content);
 

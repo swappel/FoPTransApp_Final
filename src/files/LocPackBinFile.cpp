@@ -18,7 +18,6 @@
 #define LENGTH_WIDTH_BYTES 2
 
 using namespace std;
-// TODO: Write in the .locpackbin file
 
 /**
  * @brief The default constructor with no parameters.
@@ -185,51 +184,54 @@ std::array<uint8_t, 16> LocPackBinFile::hashToBytes(const std::string& hash)
  */
 BlockInfo LocPackBinFile::getTextByHash(const std::string& hash, const LocPackFile& locPackFile) const
 {
-    // Fetch the length of the fields
-    const unsigned int fieldCount = locPackFile.getFieldCount();
-    const unsigned int integerFieldCount = fieldCount - 2;
+    std::string flippedHex = hash;
+    LocPackBinFile::flipEndianness(flippedHex, 8);
 
-    // Prepare the hash for search
-    string beHash = hash;
-    flipEndianness(beHash);
-    array<uint8_t, 16> hashBytes = hashToBytes(beHash);
-
-    // Search hashBytes in fileContent vector
-    auto searchRange = ranges::search(m_fileContent, hashBytes);
-    if (searchRange.empty())
-    {
-        cerr << "Hash not found: " << hash << endl;
-        return {};
+    std::vector<uint8_t> binaryHash;
+    binaryHash.reserve(HASH_WIDTH_BYTES);
+    for (size_t i = 0; i < flippedHex.length(); i += 2) {
+        std::string byteString = flippedHex.substr(i, 2);
+        auto byte = static_cast<uint8_t>(std::strtol(byteString.c_str(), nullptr, 16));
+        binaryHash.push_back(byte);
     }
 
-    const size_t startIndex = distance(m_fileContent.begin(), searchRange.begin());
+    const auto it = ranges::search(m_fileContent, binaryHash).begin();
 
-    // Read the integer fields
-    vector<int> fields;
-    for (int i = 0; i < integerFieldCount; i++)
-    {
+    if (it == m_fileContent.end()) {
+        return BlockInfo(-1, 0, {}, "HASH NOT FOUND");
+    }
+
+    const size_t startIndex = std::distance(m_fileContent.begin(), it);
+
+    const unsigned int actualFieldCount = locPackFile.getFieldCount() - 2;
+    std::vector<int> fields;
+    fields.reserve(actualFieldCount);
+
+    for (unsigned int i = 0; i < actualFieldCount; ++i) {
         const size_t fieldOffset = startIndex + HASH_WIDTH_BYTES + (i * FIELD_WIDTH_BYTES);
 
-        fields.emplace_back(readBigEndian<int>(&m_fileContent[fieldOffset]));
+        if (fieldOffset + 4 > m_fileContent.size()) break;
+
+        int32_t val = 0;
+        std::memcpy(&val, &m_fileContent[fieldOffset], 4);
+        fields.push_back(val);
     }
 
-    // Read the text length
-    const size_t textLengthPosition = startIndex + HASH_WIDTH_BYTES + (integerFieldCount * FIELD_WIDTH_BYTES);
-    if (textLengthPosition + LENGTH_WIDTH_BYTES > m_fileContent.size())
-    {
-        throw runtime_error("The given text length position is non contained in the loaded file content.");
+    const size_t textLengthPosition = startIndex + HASH_WIDTH_BYTES + (actualFieldCount * FIELD_WIDTH_BYTES);
+
+    if (textLengthPosition + 2 > m_fileContent.size()) {
+        return BlockInfo(-1, 0, {}, "ERR: FILE TRUNCATED");
     }
 
-    const auto textLen = readBigEndian<uint16_t>(&m_fileContent[textLengthPosition]);
+    uint16_t textLen = 0;
+    std::memcpy(&textLen, &m_fileContent[textLengthPosition], 2);
 
-    // Read the text
     const size_t textOffset = textLengthPosition + LENGTH_WIDTH_BYTES;
-    if (textOffset + textLen > m_fileContent.size())
-    {
-        throw runtime_error("File content is too short to contain requested data.");
+    if (textOffset + textLen > m_fileContent.size()) {
+        return BlockInfo(-1, 0, {}, "ERR: STRING OUT OF BOUNDS");
     }
 
-    string text;
+    std::string text;
     text.assign(reinterpret_cast<const char*>(&m_fileContent[textOffset]), textLen);
 
     return BlockInfo(static_cast<int>(startIndex), textLen, fields, text);
@@ -248,8 +250,12 @@ void LocPackBinFile::flipEndianness(std::string& hex, const size_t byteChunkSize
 {
     if (hex.length() % 2 != 0) return;
 
-    // Convert byte size to character size (2 chars per byte)
     const size_t charChunkSize = byteChunkSize * 2;
+
+    if (hex.length() < charChunkSize || hex.length() % charChunkSize != 0)
+    {
+        return;
+    }
 
     std::string result;
     result.reserve(hex.length());
