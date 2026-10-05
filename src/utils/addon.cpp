@@ -41,17 +41,30 @@ Napi::Value VerifyFilesWrapper(const Napi::CallbackInfo& info)
     }
 
     Napi::Function jsCallback = info[0].As<Napi::Function>();
-    auto tsfn = Napi::ThreadSafeFunction::New(env, jsCallback, "VerifyProgress", 0, 1);
 
-    std::thread([](Napi::ThreadSafeFunction tsfn) {
-        auto errors = g_backend.verify([tsfn](int currentLine) {
-            tsfn.NonBlockingCall([currentLine](Napi::Env env, Napi::Function jsCb) {
-                jsCb.Call({ Napi::Number::New(env, currentLine) });
+    // Set initial context / reference count to 1 so the event loop stays alive
+    auto tsfn = Napi::ThreadSafeFunction::New(
+        env,
+        jsCallback,
+        "VerifyProgress",
+        0, // Unlimited queue
+        1  // Initial thread count (prevents Node from exiting)
+    );
+
+    std::thread([tsfn]() mutable {
+        try {
+            auto errors = g_backend.verify([tsfn](int currentLine) {
+                tsfn.NonBlockingCall([currentLine](Napi::Env env, Napi::Function jsCb) {
+                    jsCb.Call({ Napi::Number::New(env, currentLine) });
+                });
             });
-        });
+        } catch (...) {
+            // Prevent unhandled C++ exceptions from killing the process silently
+        }
 
+        // Release the thread safe function to allow Node to clean up cleanly when done
         tsfn.Release();
-    }, tsfn).detach();
+    }).detach();
 
     return Napi::Boolean::New(env, true);
 }
