@@ -28,3 +28,5 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
                 Napi::Function::New(env, TranslateWrapper));
     return exports;
 }
+
+NODE_API_MODULE(FoPTransApp_Final, Init)
