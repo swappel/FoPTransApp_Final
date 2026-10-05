@@ -1,10 +1,12 @@
 #include <napi.h>
 #include <string>
 #include <thread>
+#include <mutex>
 
 #include "utils/Backend.h"
 
 static Backend g_backend;
+static std::mutex g_backend_mutex;
 
 Napi::Value LoadFilesWrapper(const Napi::CallbackInfo& info)
 {
@@ -19,6 +21,7 @@ Napi::Value LoadFilesWrapper(const Napi::CallbackInfo& info)
     std::string locpackPath = info[0].As<Napi::String>().Utf8Value();
     std::string locpackbinPath = info[1].As<Napi::String>().Utf8Value();
 
+    std::lock_guard<std::mutex> lock(g_backend_mutex);
     g_backend.loadFiles(locpackPath, locpackbinPath);
 
     return Napi::Boolean::New(env, true);
@@ -27,6 +30,7 @@ Napi::Value LoadFilesWrapper(const Napi::CallbackInfo& info)
 Napi::Value GetTotalLinesWrapper(const Napi::CallbackInfo& info)
 {
     Napi::Env env = info.Env();
+    std::lock_guard<std::mutex> lock(g_backend_mutex);
     return Napi::Number::New(env, g_backend.countLines());
 }
 
@@ -42,27 +46,37 @@ Napi::Value VerifyFilesWrapper(const Napi::CallbackInfo& info)
 
     Napi::Function jsCallback = info[0].As<Napi::Function>();
 
-    // Set initial context / reference count to 1 so the event loop stays alive
     auto tsfn = Napi::ThreadSafeFunction::New(
         env,
         jsCallback,
         "VerifyProgress",
         0, // Unlimited queue
-        1  // Initial thread count (prevents Node from exiting)
+        1  // Initial thread count
     );
 
     std::thread([tsfn]() mutable {
         try {
+            std::lock_guard<std::mutex> lock(g_backend_mutex);
             auto errors = g_backend.verify([tsfn](int currentLine) {
                 tsfn.NonBlockingCall([currentLine](Napi::Env env, Napi::Function jsCb) {
-                    jsCb.Call({ Napi::Number::New(env, currentLine) });
+                    try {
+                        if (jsCb.IsFunction()) {
+                            jsCb.Call({ Napi::Number::New(env, currentLine) });
+                        }
+                    } catch (const Napi::Error& e) {
+                        // Catches any JS exception thrown during progress update
+                        printf("[Native Addon] Callback Exception: %s\n", e.what());
+                    } catch (...) {
+                        printf("[Native Addon] Unknown Exception in Progress Callback\n");
+                    }
                 });
             });
+        } catch (const std::exception& e) {
+            printf("[Native Addon] Verification thread error: %s\n", e.what());
         } catch (...) {
-            // Prevent unhandled C++ exceptions from killing the process silently
+            printf("[Native Addon] Unknown verification thread error.\n");
         }
 
-        // Release the thread safe function to allow Node to clean up cleanly when done
         tsfn.Release();
     }).detach();
 
