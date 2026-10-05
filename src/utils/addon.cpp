@@ -27,7 +27,6 @@ Napi::Value LoadFilesWrapper(const Napi::CallbackInfo& info)
 Napi::Value GetTotalLinesWrapper(const Napi::CallbackInfo& info)
 {
     Napi::Env env = info.Env();
-
     return Napi::Number::New(env, g_backend.countLines());
 }
 
@@ -45,9 +44,8 @@ Napi::Value VerifyFilesWrapper(const Napi::CallbackInfo& info)
     auto tsfn = Napi::ThreadSafeFunction::New(env, jsCallback, "VerifyProgress", 0, 1);
 
     std::thread([](Napi::ThreadSafeFunction tsfn) {
-
         auto errors = g_backend.verify([tsfn](int currentLine) {
-            tsfn.BlockingCall([currentLine](Napi::Env env, Napi::Function jsCb) {
+            tsfn.NonBlockingCall([currentLine](Napi::Env env, Napi::Function jsCb) {
                 jsCb.Call({ Napi::Number::New(env, currentLine) });
             });
         });
@@ -56,7 +54,6 @@ Napi::Value VerifyFilesWrapper(const Napi::CallbackInfo& info)
     }, tsfn).detach();
 
     return Napi::Boolean::New(env, true);
-
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)

@@ -6,11 +6,18 @@ void Backend::loadFiles(const std::string& locpackPath, const std::string& locpa
 {
     locpackFile = LocPackFile(locpackPath);
     locpackbinFile = LocPackBinFile(locpackbinPath);
+
+    locpackFile.reload();
+    locpackbinFile.reload();
 }
 
 unsigned int Backend::countLines() const
 {
-    return locpackFile.getEntryCount();
+    try {
+        return locpackFile.getEntryCount();
+    } catch (...) {
+        return 0;
+    }
 }
 
 std::vector<int> Backend::verify(std::function<void(int)> onProgress)
