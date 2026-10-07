@@ -32,3 +32,18 @@ std::vector<int> Backend::verify(std::function<void(int)> onProgress)
         return {};
     }
 }
+
+std::vector<LocaleLine> Backend::getLinesRange(int startIndex, int count)
+{
+    std::vector<LocaleLine> result;
+    int total = static_cast<int>(locpackFile.getEntryCount());
+    if (startIndex < 2) startIndex = 2;
+
+    int endIndex = std::min(startIndex + count, total);
+    result.reserve(endIndex - startIndex);
+
+    for (int i = startIndex; i < endIndex; ++i) {
+        result.push_back(locpackFile.findFromIndex(i));
+    }
+    return result;
+}

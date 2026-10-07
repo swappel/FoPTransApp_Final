@@ -98,11 +98,45 @@ Napi::Value VerifyFilesWrapper(const Napi::CallbackInfo& info)
     return Napi::Boolean::New(env, true);
 }
 
+Napi::Value GetLinesRangeWrapper(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsNumber()) {
+        Napi::TypeError::New(env, "Expected start index and count integers").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    int startIndex = info[0].As<Napi::Number>().Int32Value();
+    int count = info[1].As<Napi::Number>().Int32Value();
+
+    std::lock_guard<std::mutex> lock(g_backend_mutex);
+    auto lines = g_backend.getLinesRange(startIndex, count);
+
+    Napi::Array arr = Napi::Array::New(env, lines.size());
+    for (size_t i = 0; i < lines.size(); ++i) {
+        Napi::Object obj = Napi::Object::New(env);
+        obj.Set("hash", lines[i].getHash());
+        obj.Set("content", lines[i].getContent());
+
+        Napi::Array fieldsArr = Napi::Array::New(env, lines[i].getFields().size());
+        for (size_t j = 0; j < lines[i].getFields().size(); ++j) {
+            fieldsArr.Set(j, Napi::Number::New(env, lines[i].getFields()[j]));
+        }
+        obj.Set("fields", fieldsArr);
+
+        arr.Set(i, obj);
+    }
+
+    return arr;
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
     exports.Set(Napi::String::New(env, "loadFiles"), Napi::Function::New(env, LoadFilesWrapper));
     exports.Set(Napi::String::New(env, "getTotalLines"), Napi::Function::New(env, GetTotalLinesWrapper));
     exports.Set(Napi::String::New(env, "verifyFiles"), Napi::Function::New(env, VerifyFilesWrapper));
+    exports.Set(Napi::String::New(env, "getLinesRange"), Napi::Function::New(env, GetLinesRangeWrapper));
 
     return exports;
 }
