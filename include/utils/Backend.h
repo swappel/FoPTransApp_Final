@@ -13,4 +13,5 @@ public:
     [[nodiscard]] unsigned int countLines() const;
     std::vector<int> verify(std::function<void(int)> onProgress = nullptr);
     std::vector<LocaleLine> getLinesRange(int startIndex, int count);
+    std::vector<LocaleLine> searchLines(std::string);
 };
