@@ -1,7 +1,6 @@
 #include "files/FileManager.h"
 
 #include <algorithm>
-#include <cstring>
 
 #include "files/LocPackFile.h"
 
@@ -18,15 +17,6 @@ std::string sanitize(std::string s) {
       s = s.substr(1, s.size() - 2);
    }
    return s;
-}
-
-static inline void bytesToHexUpper(const uint8_t* bytes, size_t len, std::string& outHex) {
-   static const char hexTable[] = "0123456789ABCDEF";
-   outHex.resize(len * 2);
-   for (size_t i = 0; i < len; ++i) {
-      outHex[i * 2]     = hexTable[(bytes[i] >> 4) & 0x0F];
-      outHex[i * 2 + 1] = hexTable[bytes[i] & 0x0F];
-   }
 }
 
 /**
@@ -47,106 +37,44 @@ vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile
 
    vector<int> errorList;
 
-   vector<LocaleLine> csvEntries;
-   try {
-      csvEntries = locPackFile.parseLocPackComplete();
-   } catch (...) {
-      return errorList;
-   }
-
-   const size_t totalEntries = csvEntries.size();
-   if (totalEntries == 0) return errorList;
-
    const unsigned int fieldCount = locPackFile.getFieldCount() - 2;
 
-   const std::filesystem::path binPath = locPackBinFile.getPath();
-   ifstream input(binPath, ios::binary | ios::ate);
-   if (!input.is_open()) return errorList;
-
-   const size_t binSize = input.tellg();
-   vector<uint8_t> binBuffer(binSize);
-   input.seekg(0, ios::beg);
-   input.read(reinterpret_cast<char*>(binBuffer.data()), static_cast<long>(binSize));
-
-   unordered_map<string, BlockInfo> binMap;
-   binMap.reserve(totalEntries);
-
-   size_t offset = 0;
-   const size_t minHeaderSize = 16 + (fieldCount * 4) + 2;
-
-   while (offset + minHeaderSize <= binSize) {
-      const size_t entryStart = offset;
-
-      uint8_t rawHash[16];
-      memcpy(rawHash, &binBuffer[offset], 16);
-      offset += 16;
-
-      for (size_t chunk = 0; chunk < 16; chunk += 8) {
-         reverse(rawHash + chunk, rawHash + chunk + 8);
-      }
-
-      string hexHash;
-      bytesToHexUpper(rawHash, 16, hexHash);
-
-      vector<int> fields(fieldCount);
-      for (unsigned int j = 0; j < fieldCount; ++j) {
-         int32_t val = 0;
-         memcpy(&val, &binBuffer[offset], 4);
-         fields[j] = val;
-         offset += 4;
-      }
-
-      uint16_t textLen = 0;
-      std::memcpy(&textLen, &binBuffer[offset], 2);
-      offset += 2;
-
-      if (offset + textLen > binSize) break;
-
-      string text(reinterpret_cast<const char*>(&binBuffer[offset]), textLen);
-      offset += textLen;
-
-      binMap.emplace(std::move(hexHash), BlockInfo(static_cast<int>(entryStart), textLen, std::move(fields), std::move(text)));
-   }
-
-   for (size_t i = 0; i < totalEntries; ++i)
+   for (auto i = 0; i < locPackFile.getEntryCount(); i++)
    {
-      const int entryIndex = static_cast<int>(i + 2);
-
-      if (onProgress && (i % 50 == 0 || i == totalEntries - 1))
+      if (onProgress)
+      if (onProgress && (i % 50 == 0 || i == fieldCount - 1))
       {
-         onProgress(entryIndex);
+         onProgress(i + 1);
+         onProgress(static_cast<int>(i + 1));
       }
 
-      const LocaleLine& locPackEntry = csvEntries[i];
-      string hash = locPackEntry.getHash();
-      ranges::transform(hash, hash.begin(), ::toupper);
+      LocaleLine locPackEntry = locPackFile.findFromIndex(i);
+      const string& hash = locPackEntry.getHash();
 
       if (hash.length() < 32) continue;
 
-      auto it = binMap.find(hash);
-      if (it == binMap.end()) {
-         cout << "WARNING: Hash " << hash << " (Index " << entryIndex << ") not found in binary file!\n";
-         errorList.push_back(entryIndex);
+      BlockInfo locPackBinEntry = locPackBinFile.getTextByHash(hash, locPackFile);
+
+      if (locPackBinEntry.m_offset == -1) {
+         cout << "WARNING: Hash " << hash << " (Index " << i << ") not found in binary file!" << endl;
+         errorList.push_back(i);
          continue;
       }
 
-      const BlockInfo& locPackBinEntry = it->second;
-
-      string csvContent = sanitize(locPackEntry.getContent());
-      string binContent = sanitize(locPackBinEntry.m_text);
-
-      bool hasError = false;
+      std::string csvContent = sanitize(locPackEntry.getContent());
+      std::string binContent = sanitize(locPackBinEntry.m_text);
 
       if (csvContent != binContent)
       {
-         cout << "--------- WARNING: Content mismatch for hash " << hash << " (Index " << entryIndex << ") ---------\n";
-         cout << "CSV version: [" << csvContent << "]\n";
-         cout << "BIN version: [" << binContent << "]\n";
+         cout << "--------- WARNING: Content mismatch for hash " << hash << " (Index " << i << ") ---------" << endl;
+         cout << "CSV version: [" << csvContent << "]" << endl;
+         cout << "BIN version: [" << binContent << "]" << endl;
 
          if (csvContent.length() != binContent.length()) {
-            cout << "Size mismatch: CSV is " << csvContent.length() << " chars, BIN is " << binContent.length() << " chars.\n";
+            cout << "Size mismatch: CSV is " << csvContent.length() << " chars, BIN is " << binContent.length() << " chars." << endl;
          }
-         hasError = true;
+
+         errorList.push_back(i);
       }
 
       const auto& lpFields = locPackEntry.getFields();
@@ -159,13 +87,12 @@ vector<int> verifyFiles(LocPackFile &locPackFile, LocPackBinFile &locPackBinFile
 
          if (lpVal != binVal)
          {
-            cout << "WARNING: Field discrepancy at index " << entryIndex << " field " << j << "\n";
-            hasError = true;
+            cout << "WARNING: Field discrepancy at index " << i << " field " << j << endl;
+            if (std::find(errorList.begin(), errorList.end(), i) == errorList.end())
+            {
+               errorList.push_back(i);
+            }
          }
-      }
-
-      if (hasError) {
-         errorList.push_back(entryIndex);
       }
    }
 
