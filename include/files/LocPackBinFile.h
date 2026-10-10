@@ -57,8 +57,8 @@ public:
     bool readFile() const;
     [[nodiscard]] BlockInfo getTextByHash(const std::string& hash, const LocPackFile& locPackFile) const;
 
-    void applyEntryUpdate(const std::string& hexHash, int val1, int val2, const std::string& newText) const;
-    bool save() const;
+    void applyEntryUpdate(const std::string& hexHash, const std::vector<int>& fields, const std::string& newText) const;
+    void save() const;
 
     [[nodiscard]] const std::filesystem::path& getPath() { return m_filePath; }
     void setPath(const std::filesystem::path& path);

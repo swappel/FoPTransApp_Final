@@ -47,3 +47,28 @@ std::vector<LocaleLine> Backend::getLinesRange(int startIndex, int count)
     }
     return result;
 }
+
+void Backend::saveChangeToCache(const LocaleLine& newLine)
+{
+    bool success = true;
+
+    if (locpackbinFile.getTextByHash(newLine.getHash(), locpackFile).m_offset == -1 || locpackFile.findHashIndex(newLine.getHash()) == -1)
+    {
+        throw std::runtime_error("Files have failed to load or hash " + newLine.getHash() + " could not be found.");
+    }
+
+    LocaleLine originalLine = LocaleLine(originalLine.getHash(), originalLine.getFields(), originalLine.getContent());
+
+    // TODO: Check if new data has same amount of fields.
+
+    locpackFile.addChanges(newLine.getHash(), originalLine.getFields(), newLine.getContent());
+
+    locpackbinFile.applyEntryUpdate(newLine.getHash(), originalLine.getFields(), newLine.getContent());
+}
+
+void Backend::saveToFile()
+{
+    locpackFile.writeEntry();
+
+    locpackbinFile.save();
+}

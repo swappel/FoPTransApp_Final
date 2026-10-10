@@ -14,4 +14,6 @@ public:
     std::vector<int> verify(std::function<void(int)> onProgress = nullptr);
     std::vector<LocaleLine> getLinesRange(int startIndex, int count);
     std::vector<LocaleLine> searchLines(std::string);
+    void saveChangeToCache(const LocaleLine &newLine);
+    void saveToFile();
 };

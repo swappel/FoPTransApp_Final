@@ -145,7 +145,6 @@ void LocPackBinFile::setPath(const std::filesystem::path& path)
  * @brief Converts a hash string to its big endian byte version.
  *
  * This function converts a hash from the .locpackbin file to an array of 16 bytes contaning the hash. <br>
- * Used to convert the hash from a .locpack... file to the hash version in a .locpack... file
  *
  * @param hash The hash in .lockpackbin version(Little Endian) as a string. No '0x' prefix.
  * @return An array of length 16 with the converted hash.
@@ -283,7 +282,7 @@ void LocPackBinFile::flipEndianness(std::string& hex, const size_t byteChunkSize
  * @param val2 The second field integer value.
  * @param newText The replacement text content.
  */
-void LocPackBinFile::applyEntryUpdate(const std::string& hexHash, int val1, int val2, const std::string& newText) const
+void LocPackBinFile::applyEntryUpdate(const std::string& hexHash, const vector<int>& fields, const std::string& newText) const
 {
     std::string flippedHex = hexHash;
     LocPackBinFile::flipEndianness(flippedHex, 8);
@@ -304,9 +303,8 @@ void LocPackBinFile::applyEntryUpdate(const std::string& hexHash, int val1, int 
     }
 
     const size_t startIndex = std::distance(m_fileContent.begin(), it);
-    const size_t val1Offset = startIndex + HASH_WIDTH_BYTES;
-    const size_t val2Offset = val1Offset + FIELD_WIDTH_BYTES;
-    const size_t textLenOffset = val2Offset + FIELD_WIDTH_BYTES;
+    const size_t firstValueOffset = startIndex + HASH_WIDTH_BYTES;
+    const size_t textLenOffset = fields.size() * FIELD_WIDTH_BYTES + FIELD_WIDTH_BYTES;
 
     if (textLenOffset + LENGTH_WIDTH_BYTES > m_fileContent.size())
     {
@@ -324,8 +322,19 @@ void LocPackBinFile::applyEntryUpdate(const std::string& hexHash, int val1, int 
         throw std::runtime_error("Old string bounds exceed file size.");
     }
 
-    std::memcpy(&m_fileContent[val1Offset], &val1, sizeof(int32_t));
-    std::memcpy(&m_fileContent[val2Offset], &val2, sizeof(int32_t));
+    for (auto i = 0; i < fields.size(); i++)
+    {
+        const size_t currentValueOffset = firstValueOffset + i * FIELD_WIDTH_BYTES;
+
+        memcpy(&m_fileContent[currentValueOffset], &fields[i], sizeof(int32_t));
+    }
+
+    /*
+     * Original version of the writing(for 2 values only)
+     *
+     * std::memcpy(&m_fileContent[val1Offset], &val1, sizeof(int32_t));
+     * std::memcpy(&m_fileContent[val2Offset], &val2, sizeof(int32_t));
+     */
 
     uint16_t newTextLen = static_cast<uint16_t>(newText.length());
     std::memcpy(&m_fileContent[textLenOffset], &newTextLen, sizeof(uint16_t));
@@ -339,23 +348,22 @@ void LocPackBinFile::applyEntryUpdate(const std::string& hexHash, int val1, int 
 
 /**
  * @brief Flushes m_fileContent to disk once after all updates are applied.
- *
- * @return true if successful, false otherwise.
  */
-bool LocPackBinFile::save() const
+void LocPackBinFile::save() const
 {
     std::ofstream output(m_filePath, std::ios::binary | std::ios::trunc);
     if (!output.is_open())
     {
-        return false;
+        throw runtime_error("Could not open .locpackbin file at path " + m_filePath.string());
+        return;
     }
 
     output.write(reinterpret_cast<const char*>(m_fileContent.data()), m_fileContent.size());
     if (!output)
     {
-        return false;
+        throw runtime_error("Could not write to file at path " + m_filePath.string());
+        return;
     }
 
     m_lastLoadTime = std::filesystem::last_write_time(m_filePath);
-    return true;
 }

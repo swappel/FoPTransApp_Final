@@ -131,12 +131,64 @@ Napi::Value GetLinesRangeWrapper(const Napi::CallbackInfo& info)
     return arr;
 }
 
+Napi::Value SaveChangeToCache(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 1 || !info[0].IsObject())
+    {
+        Napi::TypeError::New(env, "Expected a LocaleLineData object").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    Napi::Object obj = info[0].As<Napi::Object>();
+
+    if (!obj.Has("hash") || !obj.Has("fields") || !obj.Has("content") ||
+        !obj.Get("hash").IsString() || !obj.Get("fields").IsArray() || !obj.Get("content").IsString())
+    {
+        Napi::TypeError::New(env, "Invalid LocaleLineData structure: expected hash (string), fields (number[]), and content (string)").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    std::string hash = obj.Get("hash").As<Napi::String>().Utf8Value();
+    std::string content = obj.Get("content").As<Napi::String>().Utf8Value();
+
+    Napi::Array fieldsArray = obj.Get("fields").As<Napi::Array>();
+    std::vector<int> fields;
+    fields.reserve(fieldsArray.Length());
+
+    for (uint32_t i = 0; i < fieldsArray.Length(); ++i) {
+        Napi::Value val = fieldsArray.Get(i);
+        if (val.IsNumber()) {
+            fields.push_back(val.As<Napi::Number>().Int32Value());
+        }
+    }
+
+    try {
+        LocaleLine newLine(hash, fields, content);
+
+        std::lock_guard<std::mutex> lock(g_backend_mutex);
+        g_backend.saveChangeToCache(newLine);
+    }
+    catch (const std::exception& e) {
+        Napi::Error::New(env, e.what()).ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    catch (...) {
+        Napi::Error::New(env, "Unknown native error while saving change to cache").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    return Napi::Boolean::New(env, true);
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
     exports.Set(Napi::String::New(env, "loadFiles"), Napi::Function::New(env, LoadFilesWrapper));
     exports.Set(Napi::String::New(env, "getTotalLines"), Napi::Function::New(env, GetTotalLinesWrapper));
     exports.Set(Napi::String::New(env, "verifyFiles"), Napi::Function::New(env, VerifyFilesWrapper));
     exports.Set(Napi::String::New(env, "getLinesRange"), Napi::Function::New(env, GetLinesRangeWrapper));
+    exports.Set(Napi::String::New(env, "saveChangeToCache"), Napi::Function::New(env, SaveChangeToCache));
 
     return exports;
 }
