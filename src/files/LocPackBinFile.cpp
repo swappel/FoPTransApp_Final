@@ -304,8 +304,7 @@ void LocPackBinFile::applyEntryUpdate(const std::string& hexHash, const vector<i
 
     const size_t startIndex = std::distance(m_fileContent.begin(), it);
     const size_t firstValueOffset = startIndex + HASH_WIDTH_BYTES;
-    const size_t textLenOffset = fields.size() * FIELD_WIDTH_BYTES + FIELD_WIDTH_BYTES;
-
+    const size_t textLenOffset = startIndex + HASH_WIDTH_BYTES + (fields.size() * FIELD_WIDTH_BYTES);
     if (textLenOffset + LENGTH_WIDTH_BYTES > m_fileContent.size())
     {
         throw std::runtime_error("File truncated at target entry.");
