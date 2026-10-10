@@ -392,7 +392,7 @@ void LocPackFile::addChanges(const std::string& hash, const vector<int>& fields,
     m_changeCache[rowIndex] = std::move(newRow);
 }
 
-void LocPackFile::writeEntry()
+void LocPackFile::writeEntry(const filesystem::path& path)
 {
     if (!m_document)
     {
@@ -402,6 +402,15 @@ void LocPackFile::writeEntry()
     if (m_changeCache.empty())
     {
         return;
+    }
+
+    // Renaming old file to create backup
+    try
+    {
+        filesystem::rename(m_locPackFilePath, m_locPackFilePath.string() + ".bak");
+    } catch (const runtime_error& error)
+    {
+        throw runtime_error(string("Could not create backup file at: ") + m_locPackFilePath.string() + ".bak")
     }
 
     for (const auto& [rowIndex, newRow] : m_changeCache)
@@ -414,10 +423,10 @@ void LocPackFile::writeEntry()
         m_document->SetRow(rowIndex, newRow);
     }
 
-    m_document->Save(m_locPackFilePath.string());
+    m_document->Save(path.string());
 
     m_changeCache.clear();
-    m_lastLoadTime = std::filesystem::last_write_time(m_locPackFilePath);
+    m_lastLoadTime = std::filesystem::last_write_time(path);
 
     rebuildCache();
 }

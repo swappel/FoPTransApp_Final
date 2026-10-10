@@ -131,7 +131,7 @@ Napi::Value GetLinesRangeWrapper(const Napi::CallbackInfo& info)
     return arr;
 }
 
-Napi::Value SaveChangeToCache(const Napi::CallbackInfo& info)
+Napi::Value SaveChangeToCacheWrapper(const Napi::CallbackInfo& info)
 {
     Napi::Env env = info.Env();
 
@@ -180,6 +180,26 @@ Napi::Value SaveChangeToCache(const Napi::CallbackInfo& info)
     }
 
     return Napi::Boolean::New(env, true);
+}
+
+Napi::Value SaveToFilesWrapper(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 2 || !info[0].IsString() || !info[1].IsString())
+    {
+        Napi::TypeError::New(env, "Expected the 2 new paths for the .locpack and .locpackbin files.");
+        return env.Null();
+    }
+
+    try
+    {
+        g_backend.saveToFile();
+    } catch (const std::exception& error)
+    {
+        Napi::Error::New(env, std::string("Failed to save new files:\n") + error.what()).ThrowAsJavaScriptException();
+        return env.Null();
+    }
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
