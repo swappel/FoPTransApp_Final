@@ -410,7 +410,7 @@ void LocPackFile::writeEntry(const filesystem::path& path)
         filesystem::rename(m_locPackFilePath, m_locPackFilePath.string() + ".bak");
     } catch (const runtime_error& error)
     {
-        throw runtime_error(string("Could not create backup file at: ") + m_locPackFilePath.string() + ".bak")
+        throw runtime_error(string("Could not create backup file at: ") + m_locPackFilePath.string() + ".bak");
     }
 
     for (const auto& [rowIndex, newRow] : m_changeCache)

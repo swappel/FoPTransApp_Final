@@ -15,5 +15,5 @@ public:
     std::vector<LocaleLine> getLinesRange(int startIndex, int count);
     std::vector<LocaleLine> searchLines(std::string);
     void saveChangeToCache(const LocaleLine &newLine);
-    void saveToFile();
+    void saveToFile(const std::string& newPathString);
 };

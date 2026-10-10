@@ -65,11 +65,8 @@ void Backend::saveChangeToCache(const LocaleLine& newLine)
     locpackbinFile.applyEntryUpdate(newLine.getHash(), originalLine.getFields(), newLine.getContent());
 }
 
-void Backend::saveToFile()
+void Backend::saveToFile(const std::string& newPathString)
 {
-    std::filesystem::path newLocpackPaths = 
-
-    locpackFile.writeEntry();
-
-    locpackbinFile.save();
+    locpackFile.writeEntry(newPathString);
+    locpackbinFile.save(newPathString + "bin");
 }

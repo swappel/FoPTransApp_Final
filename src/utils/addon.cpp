@@ -186,15 +186,17 @@ Napi::Value SaveToFilesWrapper(const Napi::CallbackInfo& info)
 {
     Napi::Env env = info.Env();
 
-    if (info.Length() < 2 || !info[0].IsString() || !info[1].IsString())
+    if (info.Length() < 1 || !info[0].IsString())
     {
-        Napi::TypeError::New(env, "Expected the 2 new paths for the .locpack and .locpackbin files.");
+        Napi::TypeError::New(env, "Expected the new path for the .locpack and .locpackbin files.");
         return env.Null();
     }
 
+    const std::string newSavePath = info[0].As<Napi::String>().Utf8Value();
+
     try
     {
-        g_backend.saveToFile();
+        g_backend.saveToFile(newSavePath);
     } catch (const std::exception& error)
     {
         Napi::Error::New(env, std::string("Failed to save new files:\n") + error.what()).ThrowAsJavaScriptException();
