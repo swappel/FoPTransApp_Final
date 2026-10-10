@@ -40,5 +40,5 @@ public:
     [[nodiscard]] LocaleLine findFromIndex(const int index);
 
     void addChanges(const std::string& hash, const std::vector<int>& fields, const std::string& content);
-    void writeEntry();
+    void writeEntry(const std::filesystem::path& path);
 };

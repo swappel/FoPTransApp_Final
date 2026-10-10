@@ -349,21 +349,30 @@ void LocPackBinFile::applyEntryUpdate(const std::string& hexHash, const vector<i
 /**
  * @brief Flushes m_fileContent to disk once after all updates are applied.
  */
-void LocPackBinFile::save() const
+void LocPackBinFile::save(const filesystem::path& path) const
 {
-    std::ofstream output(m_filePath, std::ios::binary | std::ios::trunc);
+    // Renaming the old file to provide a backup.
+    try
+    {
+        filesystem::rename(m_filePath, m_filePath.string() + ".bak");
+    } catch (const filesystem::filesystem_error& error)
+    {
+        throw runtime_error(string("Error while saving backup file under: ") + m_filePath.string() + ".bak\n" + error.what());
+    }
+
+    std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output.is_open())
     {
-        throw runtime_error("Could not open .locpackbin file at path " + m_filePath.string());
+        throw runtime_error("Could not open .locpackbin file at path " + path.string());
         return;
     }
 
     output.write(reinterpret_cast<const char*>(m_fileContent.data()), m_fileContent.size());
     if (!output)
     {
-        throw runtime_error("Could not write to file at path " + m_filePath.string());
+        throw runtime_error("Could not write to file at path " + path.string());
         return;
     }
 
-    m_lastLoadTime = std::filesystem::last_write_time(m_filePath);
+    m_lastLoadTime = std::filesystem::last_write_time(path);
 }
