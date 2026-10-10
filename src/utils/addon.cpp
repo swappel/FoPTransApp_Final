@@ -202,6 +202,7 @@ Napi::Value SaveToFilesWrapper(const Napi::CallbackInfo& info)
         Napi::Error::New(env, std::string("Failed to save new files:\n") + error.what()).ThrowAsJavaScriptException();
         return env.Null();
     }
+    return Napi::Boolean::New(env, true);
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
@@ -211,6 +212,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
     exports.Set(Napi::String::New(env, "verifyFiles"), Napi::Function::New(env, VerifyFilesWrapper));
     exports.Set(Napi::String::New(env, "getLinesRange"), Napi::Function::New(env, GetLinesRangeWrapper));
     exports.Set(Napi::String::New(env, "saveChangeToCache"), Napi::Function::New(env, SaveChangeToCacheWrapper));
+    exports.Set(Napi::String::New(env, "saveToFiles"), Napi::Function::New(env, SaveToFilesWrapper));
 
     return exports;
 }
