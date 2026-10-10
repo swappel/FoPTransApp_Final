@@ -34,7 +34,6 @@ add_library(${PROJECT_NAME} SHARED
         src/files/FileManager.cpp
         src/utils/addon.cpp
         src/utils/Backend.cpp
-        src/main.cpp
         src/utils/LineSearchResult.cpp
         include/utils/LineSearchResult.h
 )
