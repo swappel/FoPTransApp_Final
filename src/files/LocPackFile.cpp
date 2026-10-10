@@ -51,10 +51,14 @@ void unescapeCsvString(std::string& str) {
 }
 
 std::string escapeCsvString(std::string str) {
-    size_t pos = 0;
-    while ((pos = str.find("\"", pos)) != std::string::npos) {
-        str.replace(pos, 1, "\"\"");
-        pos += 2;
+    if (str.length() >= 2 && str.front() == '"' && str.back() == '"') {
+        std::string inner = str.substr(1, str.length() - 2);
+        size_t pos = 0;
+        while ((pos = inner.find("\"", pos)) != std::string::npos) {
+            inner.replace(pos, 1, "\"\"");
+            pos += 2;
+        }
+        return "\"" + inner + "\"";
     }
     return str;
 }
@@ -305,7 +309,15 @@ LocaleLine LocPackFile::findFromIndex(const int index)
 
     vector<string> foundRow;
     foundRow.reserve(m_fieldNumber);
-    foundRow = m_document->GetRow<string>(index);
+
+    if (const auto it = m_changeCache.find(index); it != m_changeCache.end())
+    {
+        foundRow = it->second;
+    }
+    else
+    {
+        foundRow = m_document->GetRow<string>(index);
+    }
 
     // Get the hash
     const string hash = foundRow[0];
