@@ -11,5 +11,5 @@ LineSearchResult::LineSearchResult(const std::vector<LocaleLine>& foundLines) :
 
 const std::vector<LocaleLine> LineSearchResult::getRange(unsigned int startIdx, unsigned int count)
 {
-
+    return {};
 }
