@@ -1,61 +1,113 @@
 cmake_minimum_required(VERSION 3.20)
 
-if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "/mnt/massive/Coding/CPP/FoPTransApp_Final/.vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
-endif()
-
-project(FoPTransApp_Final)
+project(FoPTransApp_Final LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_definitions(-DNAPI_VERSION=4)
+add_compile_definitions(NAPI_VERSION=4)
 
-if (MSVC)
+if(MSVC)
     add_compile_options(/EHsc)
-else ()
+else()
     add_compile_options(-fexceptions)
-endif ()
+endif()
 
 include(FetchContent)
+
+FetchContent_Declare(
+        nlohmann_json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+FetchContent_MakeAvailable(nlohmann_json)
+
+FetchContent_Declare(
+        rapidcsv
+        URL https://github.com/d99kris/rapidcsv/archive/refs/heads/master.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+FetchContent_MakeAvailable(rapidcsv)
+
 FetchContent_Declare(
         node_addon_api
         URL https://github.com/nodejs/node-addon-api/archive/refs/tags/v8.9.2.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
+
 FetchContent_MakeAvailable(node_addon_api)
 
-find_package(nlohmann_json CONFIG REQUIRED)
-find_package(rapidcsv CONFIG REQUIRED)
+set(ADDON_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/files/LocPackFile.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/files/LocPackBinFile.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/LocaleLine.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/files/FileManager.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/addon.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Backend.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/LineSearchResult.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/utils/LineSearchResult.h"
+)
 
-# Build as a Shared Native Node Module (.node) instead of an Executable
+if(WIN32 AND DEFINED CMAKE_JS_SRC AND EXISTS "${CMAKE_JS_SRC}")
+    list(APPEND ADDON_SOURCES "${CMAKE_JS_SRC}")
+endif()
+
 add_library(${PROJECT_NAME} SHARED
-        src/files/LocPackFile.cpp
-        src/files/LocPackBinFile.cpp
-        src/utils/LocaleLine.cpp
-        src/files/FileManager.cpp
-        src/utils/addon.cpp
-        src/utils/Backend.cpp
-        src/utils/LineSearchResult.cpp
-        include/utils/LineSearchResult.h
+        ${ADDON_SOURCES}
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-        include
-        ${node_addon_api_SOURCE_DIR}
-        ${CMAKE_JS_INC}
+target_include_directories(${PROJECT_NAME}
+        PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${node_addon_api_SOURCE_DIR}"
+        "${rapidcsv_SOURCE_DIR}/src"
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
+if(DEFINED CMAKE_JS_INC)
+    target_include_directories(${PROJECT_NAME}
+            PRIVATE
+            ${CMAKE_JS_INC}
+    )
+endif()
+
+target_link_libraries(${PROJECT_NAME}
+        PRIVATE
         nlohmann_json::nlohmann_json
-        rapidcsv::rapidcsv
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-        NAPI_DISABLE_CPP_EXCEPTIONS
+if(DEFINED CMAKE_JS_LIB)
+    target_link_libraries(${PROJECT_NAME}
+            PRIVATE
+            ${CMAKE_JS_LIB}
+    )
+endif()
+
+target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
         BUILDING_NODE_EXTENSION
+        NAPI_DISABLE_CPP_EXCEPTIONS
 )
 
-# Set naming convention for Electron / Node.js
-set_target_properties(${PROJECT_NAME} PROPERTIES
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME}
+            PRIVATE
+            delayimp
+    )
+
+    if(NOT DEFINED CMAKE_SHARED_LINKER_FLAGS
+            OR NOT CMAKE_SHARED_LINKER_FLAGS MATCHES "DELAYLOAD")
+        target_link_options(${PROJECT_NAME}
+                PRIVATE
+                "/DELAYLOAD:NODE.EXE"
+        )
+    endif()
+endif()
+
+set_target_properties(${PROJECT_NAME}
+        PROPERTIES
         PREFIX ""
         SUFFIX ".node"
 )
