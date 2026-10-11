@@ -205,6 +205,55 @@ Napi::Value SaveToFilesWrapper(const Napi::CallbackInfo& info)
     return Napi::Boolean::New(env, true);
 }
 
+Napi::Value SearchLinesWrapper(const Napi::CallbackInfo& info)
+{
+    Napi::Env env = info.Env();
+
+    if (info.Length() < 1 || !info[0].IsObject())
+    {
+        Napi::TypeError::New(env, "Expected a search options object.").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    Napi::Object obj = info[0].As<Napi::Object>();
+
+    SearchOptions options;
+    options.query = obj.Has("query") && obj.Get("query").IsString()
+        ? obj.Get("query").As<Napi::String>().Utf8Value()
+        : "";
+
+    options.searchHash = obj.Has("searchHash") ? obj.Get("searchContent").As<Napi::Boolean>().Value() : true;
+    options.searchContent = obj.Has("searchContent") ? obj.Get("searchContent").As<Napi::Boolean>().Value() : true;
+    options.caseSensitive = obj.Has("caseSensitive") ? obj.Get("caseSensitive").As<Napi::Boolean>().Value() : false;
+    options.exactMatch = obj.Has("exactMatch") ? obj.Get("exactMatch").As<Napi::Boolean>().Value() : false;
+    options.startIndex = obj.Has("startIndex") ? obj.Get("startIndex").As<Napi::Number>().Int32Value() : 0;
+    options.count = obj.Has("count") ? obj.Get("count").As<Napi::Number>().Int32Value() : 100;
+
+    std::lock_guard<std::mutex> lock(g_backend_mutex);
+    auto matches = g_backend.searchLines(options);
+
+    Napi::Array arr = Napi::Array::New(env, matches.size());
+
+    for (size_t i = 0; i < matches.size(); i++)
+    {
+        Napi::Object matchObj = Napi::Object::New(env);
+        matchObj.Set("rowIndex", Napi::Number::New(env, matches[i].rowIndex));
+        matchObj.Set("hash", matches[i].hash);
+        matchObj.Set("content", matches[i].content);
+
+        Napi::Array fieldsArr = Napi::Array::New(env, matches[i].fields.size());
+        for (size_t j = 0; j < matches[i].fields.size(); j++)
+        {
+            fieldsArr.Set(j, Napi::Number::New(env, matches[i].fields[j]));
+        }
+
+        matchObj.Set("fields", fieldsArr);
+        arr.Set(i, matchObj);
+    }
+
+    return arr;
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
     exports.Set(Napi::String::New(env, "loadFiles"), Napi::Function::New(env, LoadFilesWrapper));
@@ -213,6 +262,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
     exports.Set(Napi::String::New(env, "getLinesRange"), Napi::Function::New(env, GetLinesRangeWrapper));
     exports.Set(Napi::String::New(env, "saveChangeToCache"), Napi::Function::New(env, SaveChangeToCacheWrapper));
     exports.Set(Napi::String::New(env, "saveToFiles"), Napi::Function::New(env, SaveToFilesWrapper));
+    exports.Set(Napi::String::New(env, "searchLines"), Napi::Function::New(env, SearchLinesWrapper));
 
     return exports;
 }

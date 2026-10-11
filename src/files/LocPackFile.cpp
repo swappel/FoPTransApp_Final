@@ -6,7 +6,11 @@
 #include "files/LocPackFile.h"
 
 #include <utility>
-#define HEADER_ROW_COUNT 2
+
+namespace
+{
+    constexpr int HEADER_ROW_COUNT = 2;
+}
 
 using namespace std;
 
