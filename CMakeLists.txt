@@ -47,7 +47,6 @@ set(ADDON_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/files/FileManager.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/addon.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Backend.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/SearchEngine.cpp"
 )
 
 if(WIN32 AND DEFINED CMAKE_JS_SRC AND EXISTS "${CMAKE_JS_SRC}")
